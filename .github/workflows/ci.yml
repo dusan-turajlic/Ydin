@@ -7,6 +7,32 @@ on:
     branches: [main]
 
 jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      design-system: ${{ steps.filter.outputs.design-system }}
+      storage-provider: ${{ steps.filter.outputs.storage-provider }}
+      nutrition: ${{ steps.filter.outputs.nutrition }}
+      # Computed conditions for dependent jobs
+      should-build-design-system: ${{ steps.filter.outputs.design-system == 'true' || steps.filter.outputs.nutrition == 'true' }}
+      should-test-nutrition: ${{ steps.filter.outputs.nutrition == 'true' || steps.filter.outputs.design-system == 'true' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            design-system:
+              - 'packages/DesignSystem/**'
+            storage-provider:
+              - 'packages/StorageProvider/**'
+            nutrition:
+              - 'packages/Nutrition/**'
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -29,8 +55,10 @@ jobs:
       - name: Run ESLint
         run: pnpm run lint
 
-  build-storybook:
-    name: Build Storybook
+  build-design-system:
+    name: Build DesignSystem
+    needs: changes
+    if: ${{ needs.changes.outputs.should-build-design-system == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -48,34 +76,193 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build DesignSystem
+        run: pnpm --filter @ydin/design-system build
+
+      - name: Upload DesignSystem dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: design-system-dist
+          path: packages/DesignSystem/dist
+          retention-days: 1
+
+  test-design-system:
+    name: Test DesignSystem
+    needs: changes
+    if: ${{ needs.changes.outputs.design-system == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run DesignSystem tests
+        run: pnpm --filter @ydin/design-system test
+
+  test-storage-provider:
+    name: Test StorageProvider
+    needs: changes
+    if: ${{ needs.changes.outputs.storage-provider == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Run StorageProvider tests
+        run: pnpm --filter @ydin/storage-provider test
+
+  test-nutrition:
+    name: Test Nutrition
+    needs: [changes, build-design-system]
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.should-test-nutrition == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download DesignSystem dist
+        uses: actions/download-artifact@v4
+        with:
+          name: design-system-dist
+          path: packages/DesignSystem/dist
+
+      - name: Run Nutrition tests
+        run: pnpm --filter @ydin/nutrition test:unit
+
+  test-nutrition-e2e:
+    name: Test Nutrition E2E
+    needs: [changes, build-design-system]
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.should-test-nutrition == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download DesignSystem dist
+        uses: actions/download-artifact@v4
+        with:
+          name: design-system-dist
+          path: packages/DesignSystem/dist
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Run Nutrition E2E tests
+        run: pnpm --filter @ydin/nutrition test:e2e
+
+  build:
+    name: Build
+    needs: [changes, build-design-system]
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.should-test-nutrition == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download DesignSystem dist
+        uses: actions/download-artifact@v4
+        with:
+          name: design-system-dist
+          path: packages/DesignSystem/dist
+
+      - name: Build Nutrition
+        run: pnpm --filter @ydin/nutrition build
+
+  build-storybook:
+    name: Build Storybook
+    needs: [changes, build-design-system]
+    if: ${{ !cancelled() && !failure() && needs.changes.outputs.design-system == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download DesignSystem dist
+        uses: actions/download-artifact@v4
+        with:
+          name: design-system-dist
+          path: packages/DesignSystem/dist
+
       - name: Build Storybook
-        run: pnpm --filter @peakfam/design-system build-storybook
+        run: pnpm --filter @ydin/design-system build-storybook
 
       - name: Upload Storybook artifact
         uses: actions/upload-artifact@v4
         with:
           name: storybook-static
           path: packages/DesignSystem/storybook-static
-          retention-days: 7
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build packages
-        run: pnpm run build
+          retention-days: 1
