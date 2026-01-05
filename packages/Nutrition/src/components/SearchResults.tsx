@@ -6,6 +6,8 @@ import { formatProductName } from "@/utils/format";
 import { calculateCaloriesFromMacros } from "@/utils/macros";
 import { LoadingSpinner } from "@/components/ui";
 import { Search, SearchX } from "@ydin/design-system/icons";
+import { useSheetContentHeight } from "@/hooks/useSheetContentHeight";
+import { Link } from "react-router-dom";
 
 interface SearchResultsProps {
     query: string;
@@ -18,7 +20,7 @@ export default function SearchResults({ query }: Readonly<SearchResultsProps>) {
     const [results, setResults] = useState<IOpenFoodDexObject[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
-
+    const sheetHeight = useSheetContentHeight();
     useEffect(() => {
         // Clear previous timeout
         if (debounceRef.current) {
@@ -66,7 +68,7 @@ export default function SearchResults({ query }: Readonly<SearchResultsProps>) {
     // Empty state when no query
     if (!query.trim()) {
         return (
-            <div className="flex flex-col items-center justify-center h-full text-foreground-secondary py-12">
+            <div className="flex flex-col items-center justify-center text-foreground-secondary py-12" style={{ height: sheetHeight }}>
                 <span className="text-4xl mb-2"><Search className="h-8 w-8" /></span>
                 <p>Start typing to search for foods</p>
             </div>
@@ -76,7 +78,7 @@ export default function SearchResults({ query }: Readonly<SearchResultsProps>) {
     // Loading state
     if (isSearching && results.length === 0) {
         return (
-            <div className="flex items-center justify-center h-full py-12">
+            <div className="flex items-center justify-center py-12" style={{ height: sheetHeight }}>
                 <LoadingSpinner show={true} />
             </div>
         );
@@ -85,7 +87,7 @@ export default function SearchResults({ query }: Readonly<SearchResultsProps>) {
     // No results state
     if (!isSearching && results.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center h-full text-foreground-secondary py-12">
+            <div className="flex flex-col items-center justify-center text-foreground-secondary py-12" style={{ height: sheetHeight }}>
                 <span className="text-4xl mb-2"><SearchX className="h-8 w-8" /></span>
                 <p>No results found for "{query}"</p>
             </div>
@@ -93,7 +95,7 @@ export default function SearchResults({ query }: Readonly<SearchResultsProps>) {
     }
 
     return (
-        <div className="h-[calc(70vh)] overflow-y-auto">
+        <div className="overflow-y-auto" style={{ height: sheetHeight }}>
             <div className="flex flex-col gap-2">
                 {results.map((item) => {
                     const calories = item.kcal ?? calculateCaloriesFromMacros({
@@ -103,17 +105,18 @@ export default function SearchResults({ query }: Readonly<SearchResultsProps>) {
                     });
 
                     return (
-                        <FoodCard
-                            key={item.code}
-                            title={formatProductName(item.name, item.brand)}
-                            emoji={DEFAULT_EMOJI}
-                            calories={Math.round(calories)}
-                            protein={Math.round(item.protein ?? 0)}
-                            fat={Math.round(item.fat ?? 0)}
-                            carbs={Math.round(item.carbs ?? 0)}
-                            serving={formatServing(item)}
-                            onToggle={() => handleItemClick(item)}
-                        />
+                        <Link key={item.code} to={`/food/${item.code}`}>
+                            <FoodCard
+                                title={formatProductName(item.name, item.brand)}
+                                emoji={DEFAULT_EMOJI}
+                                calories={Math.round(calories)}
+                                protein={Math.round(item.protein ?? 0)}
+                                fat={Math.round(item.fat ?? 0)}
+                                carbs={Math.round(item.carbs ?? 0)}
+                                serving={formatServing(item)}
+                                onToggle={() => handleItemClick(item)}
+                            />
+                        </Link>
                     );
                 })}
 

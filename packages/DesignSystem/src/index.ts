@@ -9,6 +9,9 @@ export { TabButton } from './components/tabButton';
 export { TabGroup } from './components/tabGroup';
 export { ModalSheet, ModalSheetPeek, ModalSheetContent, ModalSheetHandle } from './components/modalSheet';
 export type { ModalSheetProps, ModalSheetPeekProps, ModalSheetContentProps } from './components/modalSheet';
+export { NutrientRow } from './components/nutrientRow';
+export { CollapsibleSection } from './components/collapsibleSection';
+export { MacroBadge } from './components/macroBadge';
 
 // UI Components
 export { Button, buttonVariants } from './ui/button';

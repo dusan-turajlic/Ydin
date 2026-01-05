@@ -1,53 +1,35 @@
-import { useState } from "react";
+import { useAtomValue } from "jotai";
 import { ProgressIndicator } from "@ydin/design-system";
+import { targetsAtom } from "@/atoms/targets";
+import { dailyTotalsAtom } from "@/atoms/day";
+import { NUTRIENT_COLORS } from "@/constants/colors";
 
-interface MacroData {
-    value: number;
-    max: number;
+interface MacroConfig {
+    key: "calories" | "protein" | "fat" | "carbs";
+    icon: string;
+    color: string;
 }
 
-interface MacroState {
-    calories: MacroData;
-    protein: MacroData;
-    fat: MacroData;
-    carbs: MacroData;
-}
-
-const macroMapping: Record<keyof MacroState, { icon: string; color?: string }> = {
-    calories: {
-        icon: "🔥",
-    },
-    protein: {
-        icon: "P",
-        color: "bg-green-700",
-    },
-    fat: {
-        icon: "F",
-        color: "bg-red-900",
-    },
-    carbs: {
-        icon: "C",
-        color: "bg-blue-700",
-    },
-}
+const macroConfigs: MacroConfig[] = [
+    { key: "calories", icon: "🔥", color: NUTRIENT_COLORS.calories },
+    { key: "protein", icon: "P", color: NUTRIENT_COLORS.protein },
+    { key: "fat", icon: "F", color: NUTRIENT_COLORS.fat },
+    { key: "carbs", icon: "C", color: NUTRIENT_COLORS.carbs },
+];
 
 export default function MacroProgressBar() {
-    // State for macro values - will later be fetched from state/local database
-    const [macros] = useState<MacroState>({
-        calories: { value: 2500, max: 2500 },
-        protein: { value: 85, max: 200 },
-        fat: { value: 50, max: 90 },
-        carbs: { value: 120, max: 225 },
-    });
+    const targets = useAtomValue(targetsAtom);
+    const totals = useAtomValue(dailyTotalsAtom);
 
     return (
         <div className="flex flex-col gap-2 px-4 my-4 sticky top-10 z-10">
             <div className="grid grid-cols-4 gap-2">
-                {Object.entries(macros).map(([key, macroData]) => {
-                    const { icon, color = undefined } = macroMapping[key as keyof MacroState];
-                    const { value, max } = macroData as MacroData;
+                {macroConfigs.map(({ key, icon, color }) => {
+                    const value = Math.round(totals[key]);
+                    const max = targets[key];
+
                     return (
-                        <div key={`${key}-${icon}-${value}-${max}`} className="flex flex-col gap-1">
+                        <div key={key} className="flex flex-col gap-1">
                             <div className="flex items-center">
                                 <span className="text-[0.625rem] text-foreground-secondary">{icon}</span>
                                 <span className="text-[0.625rem] text-foreground-secondary ml-1">
@@ -61,10 +43,9 @@ export default function MacroProgressBar() {
                                 color={color}
                             />
                         </div>
-                    )
+                    );
                 })}
             </div>
         </div>
     );
 }
-

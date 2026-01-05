@@ -63,6 +63,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@ydin/storage-provider': path.resolve(__dirname, '../StorageProvider/src'),
     },
   },
   test: {
