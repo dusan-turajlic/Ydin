@@ -18,10 +18,12 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",
-    "@ydin/design-system": "workspace:*",
     "@subframe7536/sqlite-wasm": "^0.5.8",
     "@tailwindcss/vite": "^4.1.12",
     "@types/node": "^24.3.0",
+    "@uidotdev/usehooks": "^2.4.1",
+    "@ydin/design-system": "workspace:*",
+    "@ydin/storage-provider": "workspace:*",
     "autoprefixer": "^10.4.21",
     "brotli-wasm": "^3.0.1",
     "embla-carousel": "^8.6.0",

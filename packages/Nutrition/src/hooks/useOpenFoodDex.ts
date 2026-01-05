@@ -1,5 +1,5 @@
 // src/useOpenFoodDex.ts (example hook you call once on app load)
-import createProvider from "@/providers";
+import createProvider from "@ydin/storage-provider";
 import { useEffect, useRef } from "react";
 
 const provider = createProvider('local');

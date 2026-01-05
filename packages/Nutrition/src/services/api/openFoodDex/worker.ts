@@ -1,5 +1,5 @@
 // src/worker.ts
-import createProvider from "@/providers";
+import createProvider from "@ydin/storage-provider";
 import type { IOpenFoodDexArray, IOpenFoodDexObject } from "@/modals";
 import { DB_NAME, DB_VERSION } from ".";
 

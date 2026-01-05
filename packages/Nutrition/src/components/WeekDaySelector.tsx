@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import DayButton from "./DayButton";
+import { DayButton } from "@ydin/design-system";
 import useEmblaCarousel from 'embla-carousel-react'
-import { dateTimeStartOfDay, type DateStartOfDay } from "@/utils/browser";
+import { dateTimeStartOfDay, USER_LOCAL_LANGUAGE, type DateStartOfDay } from "@/utils/browser";
 import { addDays, makeWeekAfter, getWeekAfter, getWeekBefore } from "@/utils/date";
 
 function WeekDaySelector() {
@@ -31,7 +31,7 @@ function WeekDaySelector() {
 
     const appendNextWeek = useCallback(() => {
         setWeeks((curr) => {
-            const lastWeek = curr[curr.length - 1];
+            const lastWeek = curr.at(-1)!;
             const nextWeek = getWeekAfter(lastWeek);
             return [...curr, nextWeek];
         });
@@ -80,13 +80,15 @@ function WeekDaySelector() {
 
     return (
         <div className="w-full">
-            <div ref={emblaRef} role="listbox" className="bg-surface-base overflow-hidden">
+            <div ref={emblaRef} className="bg-surface-base overflow-hidden">
                 <div className="flex">
                     {weeks.map((week) => (
-                        <div key={week.map(({ uuid }) => uuid).join('-')} className="embla__container w-full flex justify-center items-center p-4">
-                            {week.map((dates: DateStartOfDay) => (
-                                <DayButton key={dates.uuid} id={dates.uuid} date={dates.date} isSelected={dates.uuid === selectedDate.uuid} isToday={dates.uuid === today.uuid} onClick={() => setSelectedDate(dates)} />
-                            ))}
+                        <div key={week.map(({ uuid }) => uuid).join('-')} className="embla__container w-full flex justify-center items-center gap-1 px-4">
+                            {week.map((dates: DateStartOfDay) => {
+                                const day = dates.date.toLocaleDateString(USER_LOCAL_LANGUAGE, { weekday: 'short' });
+                                const date = dates.date.getDate();
+                                return <DayButton key={dates.uuid} day={day.toUpperCase()} date={date} active={dates.uuid === selectedDate.uuid} onClick={() => setSelectedDate(dates)} />
+                            })}
                         </div>
                     ))}
                 </div>
@@ -96,3 +98,4 @@ function WeekDaySelector() {
 }
 
 export default WeekDaySelector;
+
