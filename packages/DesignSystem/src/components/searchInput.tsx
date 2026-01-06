@@ -23,8 +23,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
             action ? "pr-14" : "pr-4",
             className,
           )}
-          placeholder="Search for a food"
-          onChange={(e) => onSearch?.(e.target.value)}
+          onInput={(e) => onSearch?.(e.currentTarget.value)}
           {...props}
         />
         {action && (

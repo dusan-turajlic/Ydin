@@ -1,14 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
     ProgressIndicator,
-    Button,
     MacroBadge,
     CollapsibleSection,
     NutrientRow,
+    Button,
 } from "@ydin/design-system";
-import { Plus, Minus } from "@ydin/design-system/icons";
 import { getByBarcode } from "@/services/api/openFoodDex";
 import type { Product } from "@/modals";
 import { extractMacros, calculateCaloriesFromMacros, calculatePercentageOfTarget } from "@/utils/macros";
@@ -19,6 +18,7 @@ import { targetsAtom } from "@/atoms/targets";
 import { addEntryAndRefreshAtom } from "@/atoms/day";
 import { logHourAtom } from "@/atoms/time";
 import { sheetExpandedAtom } from "@/atoms/sheet";
+import { productActionAtom, logFoodCallbackAtom, incrementServingAtom, decrementServingAtom } from "@/atoms/productAction";
 
 interface ProductDetailProps {
     code: string;
@@ -30,11 +30,15 @@ export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
     const addEntry = useSetAtom(addEntryAndRefreshAtom);
     const [logHour, setLogHour] = useAtom(logHourAtom);
     const setIsExpanded = useSetAtom(sheetExpandedAtom);
+    const setProductAction = useSetAtom(productActionAtom);
+    const setLogFoodCallback = useSetAtom(logFoodCallbackAtom);
+    const setIncrementServing = useSetAtom(incrementServingAtom);
+    const setDecrementServing = useSetAtom(decrementServingAtom);
     const [product, setProduct] = useState<Product | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [servingCount, setServingCount] = useState(1);
-    const sheetHeight = useSheetContentHeight({ percentage: 0.75 });
+    const sheetHeight = useSheetContentHeight();
 
     useEffect(() => {
         async function fetchProduct() {
@@ -54,35 +58,47 @@ export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
         fetchProduct();
     }, [code]);
 
-    const handleLogFood = async () => {
-        if (!product) return;
+    // Increment/decrement callbacks for action bar
+    const incrementServing = useCallback(() => {
+        setServingCount(c => c + 1);
+    }, []);
 
-        const entryData = {
-            code: product.code,
-            name: product.product_name ?? "Unknown",
-            servingCount,
-            servingSize: product.macros?.serving_size ?? 100,
-            unit: product.macros?.serving_unit ?? "g",
-            macros: {
-                calories: macros.calories,
-                protein: macros.protein,
-                fat: macros.fat,
-                carbs: macros.carbs,
-                fiber: macros.fiber,
-                sugars: macros.sugars,
-            },
+    const decrementServing = useCallback(() => {
+        setServingCount(c => Math.max(1, c - 1));
+    }, []);
+
+    // Calculate derived values (only when product is loaded)
+    const servingSize = product?.macros?.serving_size ?? 100;
+    const servingUnit = product?.macros?.serving_unit ?? "g";
+    const totalServing = Math.round(servingSize * servingCount);
+
+    // Ref to hold the log food handler (updated when product/macros change)
+    const handleLogFoodRef = useRef<(() => Promise<void>) | null>(null);
+
+    // Update action bar atoms
+    useEffect(() => {
+        if (product) {
+            setProductAction({
+                productName: product.product_name?.toLowerCase() ?? "serving",
+                servingCount,
+                totalServing,
+                servingUnit,
+                canDecrement: servingCount > 1,
+            });
+            setIncrementServing(() => incrementServing);
+            setDecrementServing(() => decrementServing);
+            // Set callback that calls the ref (ref will be updated below after macros are computed)
+            setLogFoodCallback(() => async () => { await handleLogFoodRef.current?.(); });
+        }
+
+        // Clear atoms on unmount
+        return () => {
+            setProductAction(null);
+            setLogFoodCallback(null);
+            setIncrementServing(null);
+            setDecrementServing(null);
         };
-
-        // Add entry to storage and trigger refresh (uses selected day from atom)
-        await addEntry({
-            hour: logHour,
-            entry: entryData,
-        });
-
-        setLogHour(null);
-        setIsExpanded(false);
-        navigate("/food");
-    };
+    }, [product, servingCount, totalServing, servingUnit, incrementServing, decrementServing, setProductAction, setLogFoodCallback, setIncrementServing, setDecrementServing]);
 
     if (isLoading) {
         return (
@@ -110,8 +126,6 @@ export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
 
     // Extract macros from product (default to 0 if missing)
     const rawMacros = extractMacros(product.macros?.per100g);
-    const servingSize = product.macros?.serving_size ?? 100;
-    const servingUnit = product.macros?.serving_unit ?? "g";
     const multiplier = (servingSize / 100) * servingCount;
 
     // Calculate values based on serving
@@ -134,8 +148,33 @@ export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
     const getPercentage = (value: number, target: number) =>
         calculatePercentageOfTarget(value, target);
 
-    // Serving info
-    const totalServing = Math.round(servingSize * servingCount);
+    // Update the handleLogFood ref with the current function (no useEffect needed, just update the ref)
+    handleLogFoodRef.current = async () => {
+        const entryData = {
+            code: product.code,
+            name: product.product_name ?? "Unknown",
+            servingCount,
+            servingSize,
+            unit: servingUnit,
+            macros: {
+                calories: macros.calories,
+                protein: macros.protein,
+                fat: macros.fat,
+                carbs: macros.carbs,
+                fiber: macros.fiber,
+                sugars: macros.sugars,
+            },
+        };
+
+        await addEntry({
+            hour: logHour,
+            entry: entryData,
+        });
+
+        setLogHour(null);
+        setIsExpanded(false);
+        navigate("/food");
+    };
 
     return (
         <div className="flex flex-col" style={{ height: sheetHeight }}>
@@ -303,39 +342,6 @@ export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
                     <NutrientRow label="Cholesterol" value={0} target={targets.cholesterol} unit="mg" color={NUTRIENT_COLORS.cholesterol} />
                     <NutrientRow label="Water" value={0} target={targets.water} unit="g" color={NUTRIENT_COLORS.water} />
                 </CollapsibleSection>
-            </div>
-
-            {/* Bottom Action Bar - Sticky */}
-            <div className="flex items-center gap-3 pt-3 border-t border-border bg-surface">
-                {/* Serving Counter */}
-                <div className="flex items-center gap-1">
-                    <button
-                        type="button"
-                        onClick={() => setServingCount(Math.max(1, servingCount - 1))}
-                        className="p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors text-foreground"
-                        disabled={servingCount <= 1}
-                    >
-                        <Minus className="h-4 w-4" />
-                    </button>
-                    <span className="w-8 text-center font-bold text-foreground">{servingCount}</span>
-                    <button
-                        type="button"
-                        onClick={() => setServingCount(servingCount + 1)}
-                        className="p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors text-foreground"
-                    >
-                        <Plus className="h-4 w-4" />
-                    </button>
-                </div>
-
-                {/* Serving Info */}
-                <div className="flex-1 bg-muted rounded-xl px-3 py-2 text-sm text-foreground truncate">
-                    {product.product_name?.toLowerCase() ?? "serving"} • {totalServing} {servingUnit}
-                </div>
-
-                {/* Log Food Button */}
-                <Button onClick={handleLogFood}>
-                    Log Food
-                </Button>
             </div>
         </div>
     );

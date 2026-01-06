@@ -18,7 +18,7 @@ export default function TopNavigation() {
     }
 
     return (
-        <div className="sticky top-0 z-10 left-0 right-0 p-3 px-4 bg-surface-card">
+        <div className="sticky top-0 z-10 left-0 right-0 p-3 px-4 bg-primary-foreground">
             <div className="relative flex items-center justify-between">
                 <div className="inset-y-0 left-0 flex items-center">
                     <button

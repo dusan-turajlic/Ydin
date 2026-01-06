@@ -14,7 +14,6 @@ interface TabGroupProps {
 
 export function TabGroup({ tabs, defaultTab = 0, onTabChange }: Readonly<TabGroupProps>) {
   const [activeTab, setActiveTab] = React.useState(defaultTab)
-  const [prevTab, setPrevTab] = React.useState(defaultTab)
   const [indicatorStyle, setIndicatorStyle] = React.useState({ left: 0, width: 0 })
   const tabRefs = React.useRef<(HTMLDivElement | null)[]>([])
 
@@ -28,10 +27,7 @@ export function TabGroup({ tabs, defaultTab = 0, onTabChange }: Readonly<TabGrou
     }
   }, [activeTab])
 
-  const direction = activeTab > prevTab ? 1 : -1
-
   const handleTabChange = (index: number) => {
-    setPrevTab(activeTab)
     setActiveTab(index)
     onTabChange?.(index)
   }
@@ -83,15 +79,7 @@ export function TabGroup({ tabs, defaultTab = 0, onTabChange }: Readonly<TabGrou
         />
       </div>
       <div className="rounded-xl bg-surface" role="tabpanel">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, x: direction * 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: direction * -20 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-        >
-          {tabs[activeTab].content}
-        </motion.div>
+        {tabs[activeTab].content}
       </div>
     </div>
   )
