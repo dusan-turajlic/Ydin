@@ -1,21 +1,32 @@
 import { useWindowSize } from "@uidotdev/usehooks";
 
+/** Default distance from the top of the viewport in pixels */
+const DEFAULT_TOP_OFFSET = 186;
+
 interface UseSheetContentHeightOptions {
-    /** Percentage of viewport height (0-1). Default: 0.7 */
-    percentage?: number;
-    /** Fallback value when calculation fails. Default: '70vh' */
+    /** Distance from top of viewport in pixels. Default: 100 */
+    topOffset?: number;
+    /** Bottom safe area / padding in pixels. Default: 0 */
+    bottomOffset?: number;
+    /** Fallback value when calculation fails. Default: 'calc(100vh - 100px)' */
     fallback?: string;
 }
 
 /**
- * Returns a calculated height string based on viewport height percentage.
+ * Returns a calculated height string based on distance from top of viewport.
+ * Ensures the sheet's top edge stays at a consistent position.
  * Useful for modal sheets and panels that need responsive sizing.
  */
 export function useSheetContentHeight(options: UseSheetContentHeightOptions = {}): string {
-    const { percentage = 0.7, fallback = '70vh' } = options;
+    const {
+        topOffset = DEFAULT_TOP_OFFSET,
+        bottomOffset = 0,
+        fallback = `calc(100vh - ${DEFAULT_TOP_OFFSET}px)`
+    } = options;
     const windowSize = useWindowSize();
 
-    const calculatedHeight = Math.round((windowSize.height ?? 0) * percentage);
+    const viewportHeight = windowSize.height ?? 0;
+    const calculatedHeight = Math.round(viewportHeight - topOffset - bottomOffset);
 
     if (calculatedHeight <= 0) {
         return fallback;
@@ -25,4 +36,3 @@ export function useSheetContentHeight(options: UseSheetContentHeightOptions = {}
 }
 
 export default useSheetContentHeight;
-

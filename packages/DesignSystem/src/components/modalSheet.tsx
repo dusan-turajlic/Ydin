@@ -32,9 +32,10 @@ function ModalSheet({
   onOpenChange,
   modal = true,
 }: Readonly<React.PropsWithChildren<ModalSheetProps>>) {
-  // Extracts the valid children
-  const { peek, content } = React.useMemo(() => {
+  // Extracts the valid children and their visibility props
+  const { peek, peekVisibleWhenCollapsed, content, bottomPeek, bottomPeekVisibleWhenCollapsed } = React.useMemo(() => {
     const childrenArray = React.Children.toArray(children)
+    
     const peek = childrenArray.find((child: React.ReactNode) => {
       if (React.isValidElement(child)) {
         const childType = child.type as React.ComponentType
@@ -43,7 +44,7 @@ function ModalSheet({
         }
       }
       return false
-    })
+    }) as React.ReactElement<ModalSheetPeekProps> | undefined
 
     const content = childrenArray.find((child: React.ReactNode) => {
       if (React.isValidElement(child)) {
@@ -55,12 +56,28 @@ function ModalSheet({
       return false
     })
 
-    return { peek, content }
+    const bottomPeek = childrenArray.find((child: React.ReactNode) => {
+      if (React.isValidElement(child)) {
+        const childType = child.type as React.ComponentType
+        if (childType.displayName === ModalSheetBottomPeek.displayName) {
+          return true
+        }
+      }
+      return false
+    }) as React.ReactElement<ModalSheetBottomPeekProps> | undefined
+
+    // Extract visibleWhenCollapsed props (default to true for backward compat)
+    const peekVisibleWhenCollapsed = peek?.props?.visibleWhenCollapsed ?? true
+    const bottomPeekVisibleWhenCollapsed = bottomPeek?.props?.visibleWhenCollapsed ?? true
+
+    return { peek, peekVisibleWhenCollapsed, content, bottomPeek, bottomPeekVisibleWhenCollapsed }
   }, [children])
 
-  const hasPeek = !!peek
-  // Drawer stays open (rendered) if there's peek content OR if open=true
-  const drawerOpen = hasPeek || open
+  // Drawer stays open if any peek wants to be visible when collapsed OR if open=true
+  const hasPersistentPeek = 
+    (peek && peekVisibleWhenCollapsed) || 
+    (bottomPeek && bottomPeekVisibleWhenCollapsed)
+  const drawerOpen = hasPersistentPeek || open
 
   // Key to force re-mount when we need to reset to peek state
   const [resetKey, setResetKey] = React.useState(0)
@@ -69,8 +86,8 @@ function ModalSheet({
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange?.(newOpen)
 
-    // When closing with peek, immediately queue a reset
-    if (!newOpen && hasPeek) {
+    // When closing with persistent peek, immediately queue a reset
+    if (!newOpen && hasPersistentPeek) {
       // Use queueMicrotask to reset after current JS execution
       queueMicrotask(() => {
         setResetKey((k) => k + 1)
@@ -95,7 +112,7 @@ function ModalSheet({
   return (
     <ModalSheetContext.Provider value={contextValue}>
       <Drawer.Root
-        key={hasPeek ? resetKey : undefined}
+        key={hasPersistentPeek ? resetKey : undefined}
         open={drawerOpen}
         onOpenChange={handleOpenChange}
         modal={modal}
@@ -129,6 +146,7 @@ function ModalSheet({
             >
               {peek}
               {content}
+              {bottomPeek}
             </motion.div>
           </Drawer.Content>
         </Drawer.Portal>
@@ -165,9 +183,11 @@ function ModalSheetHandle() {
   )
 }
 
-// Peek content - always visible when sheet is rendered
+// Peek content - always visible when sheet is rendered (top position)
 interface ModalSheetPeekProps {
   className?: string
+  /** Whether this peek is visible when the sheet is collapsed. Default: true */
+  visibleWhenCollapsed?: boolean
 }
 
 function ModalSheetPeek({
@@ -183,6 +203,27 @@ function ModalSheetPeek({
 
 // Add displayName for reliable child detection
 ModalSheetPeek.displayName = "ModalSheetPeek"
+
+// Bottom Peek content - always visible when sheet is rendered (bottom position)
+interface ModalSheetBottomPeekProps {
+  className?: string
+  /** Whether this peek is visible when the sheet is collapsed. Default: true */
+  visibleWhenCollapsed?: boolean
+}
+
+function ModalSheetBottomPeek({
+  children,
+  className,
+}: Readonly<React.PropsWithChildren<ModalSheetBottomPeekProps>>) {
+  return (
+    <div className={cn(className)}>
+      {children}
+    </div>
+  )
+}
+
+// Add displayName for reliable child detection
+ModalSheetBottomPeek.displayName = "ModalSheetBottomPeek"
 
 // Expandable content - controlled by open prop
 interface ModalSheetContentProps {
@@ -222,5 +263,5 @@ function ModalSheetContent({
 
 ModalSheetContent.displayName = "ModalSheetContent"
 
-export { ModalSheet, ModalSheetPeek, ModalSheetContent, ModalSheetHandle }
-export type { ModalSheetProps, ModalSheetPeekProps, ModalSheetContentProps }
+export { ModalSheet, ModalSheetPeek, ModalSheetBottomPeek, ModalSheetContent, ModalSheetHandle }
+export type { ModalSheetProps, ModalSheetPeekProps, ModalSheetBottomPeekProps, ModalSheetContentProps }

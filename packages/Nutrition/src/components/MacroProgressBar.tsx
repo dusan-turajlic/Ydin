@@ -22,7 +22,7 @@ export default function MacroProgressBar() {
     const totals = useAtomValue(dailyTotalsAtom);
 
     return (
-        <div className="flex flex-col gap-2 px-4 my-4 sticky top-10 z-10">
+        <div className="flex flex-col gap-2 px-4 pb-2 my-4 sticky top-10 z-10 bg-primary-foreground">
             <div className="grid grid-cols-4 gap-2">
                 {macroConfigs.map(({ key, icon, color }) => {
                     const value = Math.round(totals[key]);

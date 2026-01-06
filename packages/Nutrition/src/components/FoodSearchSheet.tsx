@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useNavigate } from "react-router-dom";
-import { ModalSheet, ModalSheetPeek, ModalSheetContent, SearchInput, TabGroup, TabButton, Button } from "@ydin/design-system";
-import { Scan, ScanBarcode, Search, Clock, ChevronLeft, X } from "@ydin/design-system/icons";
+import { ModalSheet, ModalSheetPeek, ModalSheetBottomPeek, ModalSheetContent, SearchInput, TabGroup, TabButton, Button } from "@ydin/design-system";
+import { Scan, ScanBarcode, Search, Clock, ChevronLeft, X, Plus, Minus } from "@ydin/design-system/icons";
 import SearchResults from "@/components/SearchResults";
 import Scanner from "@/components/Scanner";
 import ProductDetail from "@/components/ProductDetail";
 import { sheetExpandedAtom } from "@/atoms/sheet";
 import { logHourAtom } from "@/atoms/time";
+import { productActionAtom, logFoodCallbackAtom, incrementServingAtom, decrementServingAtom } from "@/atoms/productAction";
 
 const SCAN_TAB_INDEX = 0;
 const SEARCH_TAB_INDEX = 1;
@@ -24,6 +25,12 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
     const logHour = useAtomValue(logHourAtom);
     const setLogHour = useSetAtom(logHourAtom);
     const searchInputRef = useRef<HTMLInputElement>(null);
+
+    // Product action bar state from atoms
+    const productAction = useAtomValue(productActionAtom);
+    const logFoodCallback = useAtomValue(logFoodCallbackAtom);
+    const incrementServing = useAtomValue(incrementServingAtom);
+    const decrementServing = useAtomValue(decrementServingAtom);
 
     // Auto-expand when viewing product details
     useEffect(() => {
@@ -88,9 +95,9 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
             }}
             modal={false}
         >
-            <ModalSheetPeek>
-                {isViewingProduct ? (
-                    // Product detail action bar
+            {/* Product detail action bar - only visible when viewing a product */}
+            {isViewingProduct && (
+                <ModalSheetPeek visibleWhenCollapsed={false}>
                     <div className="flex items-center justify-between py-2">
                         <button
                             type="button"
@@ -109,33 +116,8 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
                             </Button>
                         </div>
                     </div>
-                ) : (
-                    // Search input (default view)
-                    activeTab === SEARCH_TAB_INDEX && (
-                        <div className="py-2">
-                            <SearchInput
-                                ref={searchInputRef}
-                                placeholder="Search for a food..."
-                                onFocus={() => setIsExpanded(true)}
-                                onSearch={setSearchQuery}
-                                action={!isExpanded && (
-                                    <Button
-                                        onClick={() => {
-                                            setActiveTab(SCAN_TAB_INDEX);
-                                            setIsExpanded(true);
-                                        }}
-                                        variant="icon"
-                                        size="icon-sm"
-                                        aria-label="Scan barcode"
-                                    >
-                                        <ScanBarcode className="h-4 w-4" />
-                                    </Button>
-                                )}
-                            />
-                        </div>
-                    )
-                )}
-            </ModalSheetPeek>
+                </ModalSheetPeek>
+            )}
 
             <ModalSheetContent>
                 {isExpanded && (
@@ -150,6 +132,81 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
                     )
                 )}
             </ModalSheetContent>
+
+            {/* Bottom peek - always render to keep hasPersistentPeek stable */}
+            <ModalSheetBottomPeek>
+                <div className="relative h-12">
+                    {/* Search input - shown when on search tab and not viewing product */}
+                    <div
+                        className={`absolute inset-0 ${activeTab === SEARCH_TAB_INDEX && !isViewingProduct
+                            ? 'w-full'
+                            : 'w-0 pointer-events-none -z-50 overflow-hidden'
+                            }`}
+                    >
+                        <SearchInput
+                            ref={searchInputRef}
+                            placeholder="Search for a food..."
+                            onFocus={() => setIsExpanded(true)}
+                            onSearch={setSearchQuery}
+                            action={!isExpanded && (
+                                <Button
+                                    onClick={() => {
+                                        setActiveTab(SCAN_TAB_INDEX);
+                                        setIsExpanded(true);
+                                    }}
+                                    variant="icon"
+                                    size="icon-sm"
+                                    aria-label="Scan barcode"
+                                >
+                                    <ScanBarcode className="h-4 w-4" />
+                                </Button>
+                            )}
+                        />
+                    </div>
+
+                    {/* Product action bar - shown when viewing product */}
+                    <div
+                        className={`absolute inset-0 ${isViewingProduct && productAction
+                            ? 'w-full'
+                            : 'w-0 pointer-events-none overflow-hidden'
+                            }`}
+                    >
+                        <div className="flex items-center gap-3 h-full">
+                            {/* Serving Counter */}
+                            <div className="flex items-center gap-1">
+                                <button
+                                    type="button"
+                                    onClick={() => decrementServing?.()}
+                                    className="p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors text-foreground disabled:opacity-50"
+                                    disabled={!productAction?.canDecrement}
+                                >
+                                    <Minus className="h-4 w-4" />
+                                </button>
+                                <span className="w-8 text-center font-bold text-foreground">
+                                    {productAction?.servingCount ?? 1}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => incrementServing?.()}
+                                    className="p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors text-foreground"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                </button>
+                            </div>
+
+                            {/* Serving Info */}
+                            <div className="flex-1 bg-muted rounded-xl px-3 py-2 text-sm text-foreground truncate">
+                                {productAction?.productName ?? "serving"} • {productAction?.totalServing ?? 0} {productAction?.servingUnit ?? "g"}
+                            </div>
+
+                            {/* Log Food Button */}
+                            <Button onClick={() => logFoodCallback?.()}>
+                                Log Food
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </ModalSheetBottomPeek>
         </ModalSheet>
     );
 }
