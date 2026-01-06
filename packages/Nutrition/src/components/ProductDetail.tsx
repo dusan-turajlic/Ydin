@@ -16,11 +16,9 @@ import { LoadingSpinner } from "@/components/ui";
 import { useSheetContentHeight } from "@/hooks/useSheetContentHeight";
 import { NUTRIENT_COLORS } from "@/constants/colors";
 import { targetsAtom } from "@/atoms/targets";
-import { addFoodEntryAtom } from "@/atoms/day";
+import { addEntryAndRefreshAtom } from "@/atoms/day";
 import { logHourAtom } from "@/atoms/time";
 import { sheetExpandedAtom } from "@/atoms/sheet";
-import { addItem as addDiaryItem } from "@/services/storage/diary";
-import { Day } from "@/domain";
 
 interface ProductDetailProps {
     code: string;
@@ -29,7 +27,7 @@ interface ProductDetailProps {
 export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
     const navigate = useNavigate();
     const targets = useAtomValue(targetsAtom);
-    const addFoodEntry = useSetAtom(addFoodEntryAtom);
+    const addEntry = useSetAtom(addEntryAndRefreshAtom);
     const [logHour, setLogHour] = useAtom(logHourAtom);
     const setIsExpanded = useSetAtom(sheetExpandedAtom);
     const [product, setProduct] = useState<Product | null>(null);
@@ -59,9 +57,6 @@ export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
     const handleLogFood = async () => {
         if (!product) return;
 
-        // Get today's date
-        const today = Day.today();
-
         const entryData = {
             code: product.code,
             name: product.product_name ?? "Unknown",
@@ -78,13 +73,10 @@ export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
             },
         };
 
-        // Persist to database
-        await addDiaryItem(today, logHour, entryData);
-
-        // Update in-memory state for immediate UI feedback
-        addFoodEntry({
-            ...entryData,
-            time: today.atHour(logHour),
+        // Add entry to storage and trigger refresh (uses selected day from atom)
+        await addEntry({
+            hour: logHour,
+            entry: entryData,
         });
 
         setLogHour(null);
