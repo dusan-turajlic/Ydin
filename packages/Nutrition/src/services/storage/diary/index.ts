@@ -103,8 +103,7 @@ export async function getDay(date: CoreDate): Promise<DayEntries> {
         }
 
         return dayEntries;
-    } catch (error) {
-        console.error(error);
+    } catch {
         return {};
     }
 }
