@@ -2,7 +2,7 @@ import BaseProvider, { type IBaseSearchQuary, type ProviderOptions } from "../ba
 import { v4 as uuidv4 } from 'uuid';
 import { initSQLite, type SQLiteDB } from '@subframe7536/sqlite-wasm';
 import { useIdbStorage } from '@subframe7536/sqlite-wasm/idb';
-import { wasmUrl as defaultWasmUrl } from '../assets/wasm';
+import { getCachedWasmUrl, wasmUrl as defaultWasmUrl } from '../assets/wasm';
 
 const DB_STORE_NAME = 'app_store';
 const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
@@ -58,9 +58,10 @@ export default class SQLiteProvider extends BaseProvider {
 
         this.initPromise = (async () => {
             try {
-                // WASM URL is imported from the package assets
-                // Can be overridden via options.wasmUrl
-                const storageOptions = { url: this.options?.wasmUrl ?? defaultWasmUrl };
+                // Get cached WASM blob URL - ensures WASM is only fetched once per context
+                // even if multiple SQLiteProvider instances are created
+                const wasmBlobUrl = await getCachedWasmUrl(this.options?.wasmUrl ?? defaultWasmUrl);
+                const storageOptions = { url: wasmBlobUrl };
                 const db = await initSQLite(
                     useIdbStorage(`${this.dbName}.db`, storageOptions)
                 );

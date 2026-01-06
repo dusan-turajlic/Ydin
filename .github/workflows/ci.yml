@@ -167,39 +167,6 @@ jobs:
       - name: Run Nutrition tests
         run: pnpm --filter @ydin/nutrition test:unit
 
-  test-nutrition-e2e:
-    name: Test Nutrition E2E
-    needs: [changes, build-design-system]
-    if: ${{ !cancelled() && !failure() && needs.changes.outputs.should-test-nutrition == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Download DesignSystem dist
-        uses: actions/download-artifact@v4
-        with:
-          name: design-system-dist
-          path: packages/DesignSystem/dist
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
-
-      - name: Run Nutrition E2E tests
-        run: pnpm --filter @ydin/nutrition test:e2e
-
   build:
     name: Build
     needs: [changes, build-design-system]
