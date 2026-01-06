@@ -95,21 +95,35 @@ export default class IndexDBProvider extends BaseProvider {
 
     async getAll<T>(path: string): Promise<T[]> {
         const store = await this.getStore('readonly');
-        const result = await this.wrap(store.getAll());
+        const index = store.index('path');
+        // Range query for path prefix matching
+        const range = IDBKeyRange.bound(path + '/', path + '/\uffff', false, true);
 
-        if (!result) {
-            throw createNoDataError();
-        }
+        type ResultItem = { data: T & { id: string }; timestamp: number };
+        const results: ResultItem[] = [];
 
-        // Filter results that start with the given path
-        const filteredResults = result.filter(item => item.path.startsWith(path + '/'));
+        return new Promise((resolve, reject) => {
+            const request = index.openCursor(range);
 
-        if (filteredResults.length === 0) {
-            throw createNoDataError();
-        }
-
-        const sortedResults = [...filteredResults].sort((a, b) => b.timestamp - a.timestamp);
-        return Object.fromEntries(sortedResults.map(item => [item.data.id, item.data])) as T[];
+            request.onerror = () => reject(request.error ?? new Error('IndexDB cursor error'));
+            request.onsuccess = () => {
+                const cursor = request.result;
+                if (!cursor) {
+                    if (results.length === 0) {
+                        reject(createNoDataError());
+                        return;
+                    }
+                    // Sort by timestamp descending and return as object map
+                    const sorted = [...results].sort((a: ResultItem, b: ResultItem) => b.timestamp - a.timestamp);
+                    resolve(Object.fromEntries(
+                        sorted.map((item: ResultItem) => [item.data.id, item.data])
+                    ) as unknown as T[]);
+                    return;
+                }
+                results.push({ data: cursor.value.data, timestamp: cursor.value.timestamp });
+                cursor.continue();
+            };
+        });
     }
 
     async get<T>(path: string): Promise<T> {

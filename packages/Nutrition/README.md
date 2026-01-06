@@ -71,7 +71,9 @@ This app follows a **layered MVC-inspired architecture**:
 ├─────────────────────────────────────────────────────────┤
 │  Services (src/services/)  │  Business logic & APIs    │
 ├─────────────────────────────────────────────────────────┤
-│  Providers (src/providers/)│  Storage abstraction      │
+│  Domain (src/domain/)      │  Date/time handling       │
+├─────────────────────────────────────────────────────────┤
+│  Providers (@ydin/storage) │  Storage abstraction      │
 ├─────────────────────────────────────────────────────────┤
 │  Models (src/modals/)      │  TypeScript interfaces    │
 └─────────────────────────────────────────────────────────┘
@@ -84,11 +86,39 @@ This app follows a **layered MVC-inspired architecture**:
 | Layer | Responsibility | Example |
 |-------|---------------|---------|
 | **Views** | Page composition | `Tracker.tsx` |
-| **Components** | UI + user interaction | `FoodItem.tsx`, `DiaryTracker.tsx` |
-| **Atoms** | Global state | `loggerDialog.ts` |
+| **Components** | UI + user interaction | `DiaryTracker.tsx`, `FoodSearchSheet.tsx` |
+| **Atoms** | Global state | `day.ts`, `sheet.ts` |
 | **Services** | Business logic, API calls | `openFoodDex/index.ts` |
-| **Providers** | Storage operations | `sqlite/index.ts` |
+| **Domain** | Date/time operations | `Day`, `Week`, `Time`, `CoreDate` |
+| **Providers** | Storage operations | `@ydin/storage-provider` |
 | **Models** | TypeScript interfaces | `IOpenFoodDexObject` |
+
+### Date & Time Handling
+
+> ⚠️ **Never use raw JavaScript `Date` objects.** Always use the domain layer.
+
+This app uses a dedicated domain layer for all date/time operations:
+
+```typescript
+import { Day, Week, Time, CoreDate, DateConfig } from '@/domain';
+
+// Get today
+const today = Day.today();
+
+// Work with weeks
+const week = Day.getWeek(today);
+const days = week.days; // Array of 7 CoreDate objects
+
+// Navigate
+const nextWeek = week.next();
+const tomorrow = Day.add(today, 1);
+
+// Format with locale awareness
+const label = Day.toShortWeekday(today); // "Mon"
+const timeLabel = Time.toLabel(now);     // "14:30" or "2:30 PM"
+```
+
+See [CONTRIBUTING.md](../../CONTRIBUTING.md#date--time-handling) for the complete guide.
 
 ## Folder Structure
 
@@ -96,15 +126,16 @@ This app follows a **layered MVC-inspired architecture**:
 src/
 ├── atoms/              # Jotai state atoms
 ├── components/         # Reusable UI components
-│   ├── Dialog/         # Modal/dialog components
 │   └── ui/             # Small UI primitives
+├── constants/          # App constants (colors, nutrition, tabs)
+├── domain/             # Date/time handling (CoreDate, Day, Week, Time)
 ├── hooks/              # Custom React hooks
 ├── modals/             # TypeScript interfaces (models)
-├── providers/          # Storage layer (SQLite, IndexedDB)
 ├── services/           # Business logic & APIs
+│   ├── api/            # External API integrations
+│   └── storage/        # Storage service layer
 ├── utils/              # Utility functions
-├── views/              # Page-level components
-└── constants.ts        # App-wide constants
+└── views/              # Page-level components
 ```
 
 ## Contributing

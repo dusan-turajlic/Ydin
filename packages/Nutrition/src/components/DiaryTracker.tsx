@@ -1,63 +1,83 @@
-import { dateTimeStartOfDay, USER_LOCAL_LANGUAGE } from "@/utils/browser";
-import { createDateTimeUUID } from "@/utils/uuid";
+import { useEffect, useState } from "react";
+import { useSetAtom } from "jotai";
+import { Day, Time } from "@/domain";
 import { Plus } from "@ydin/design-system/icons";
-import { Button } from "@ydin/design-system";
-
-function generateTimeStamps() {
-    const today = dateTimeStartOfDay();
-    const trackableHouers = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
-    const tracableTime = trackableHouers.map((time) => {
-        const date = new Date(today.date);
-        date.setHours(time)
-        return date
-    })
-
-    return tracableTime;
-}
+import { Button, FoodCard } from "@ydin/design-system";
+import { logHourAtom, generateTimeSlots } from "@/atoms/time";
+import { sheetExpandedAtom } from "@/atoms/sheet";
+import { getDay, type DayEntries } from "@/services/storage/diary";
 
 function DiaryTracker() {
-    const times = generateTimeStamps();
-    const today = dateTimeStartOfDay();
+    const timeSlots = generateTimeSlots();
+    const today = Day.today();
+    const todayUUID = Day.toUUID(today);
+    const setLogHour = useSetAtom(logHourAtom);
+    const setIsExpanded = useSetAtom(sheetExpandedAtom);
+    const [dayEntries, setDayEntries] = useState<DayEntries>({});
+
+    // Fetch entries for today on mount
+    useEffect(() => {
+        async function fetchEntries() {
+            const entries = await getDay(today);
+            setDayEntries(entries);
+        }
+        fetchEntries();
+    }, [todayUUID]);
+
     return (
         <div className="flow-root">
             <ul className="my-4 mx-2">
-                {times.map((time, idx) => {
-                    const label = time.toLocaleTimeString(USER_LOCAL_LANGUAGE, {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: false
-                    })
-                    const uuid = createDateTimeUUID(time, today.uuid)
+                {timeSlots.map((timeSlot, idx) => {
+                    const label = Time.toLabel(timeSlot);
+                    const hour = timeSlot.hours;
+                    const uuid = Time.toUUID(timeSlot, todayUUID);
                     return (
                         <li key={uuid}>
                             <div className="relative pb-5">
-                                {idx !== times.length - 1 ? (
+                                {idx < timeSlots.length - 1 && (
                                     <span
                                         aria-hidden="true"
                                         className="absolute top-1 left-6 h-full w-px bg-surface-card"
                                     />
-                                ) : null}
+                                )}
                                 <div className="relative flex space-x-1">
                                     <div className="flex space-x-1">
                                         <Button variant="secondary" size="xs">
                                             {label}
                                         </Button>
-                                        <Button variant="icon" size="icon-xs">
+                                        <Button
+                                            variant="icon"
+                                            size="icon-xs"
+                                            onClick={() => {
+                                                setLogHour(hour);
+                                                setIsExpanded(true);
+                                            }}
+                                        >
                                             <Plus aria-hidden="true" className="size-3" />
                                         </Button>
                                     </div>
-                                    <div className="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                                        {/** Food content goes here */}
+                                    <div className="flex flex-col min-w-0 flex-1 gap-2">
+                                        {(dayEntries[hour] ?? []).map((item) => (
+                                            <FoodCard
+                                                key={item.id}
+                                                title={item.name}
+                                                emoji="🍽️"
+                                                calories={Math.round(item.macros.calories)}
+                                                protein={Math.round(item.macros.protein)}
+                                                fat={Math.round(item.macros.fat)}
+                                                carbs={Math.round(item.macros.carbs)}
+                                                serving={`${item.servingCount} × ${item.servingSize}${item.unit}`}
+                                            />
+                                        ))}
                                     </div>
                                 </div>
                             </div>
                         </li>
-                    )
+                    );
                 })}
             </ul>
         </div>
-    )
+    );
 }
 
 export default DiaryTracker;
-

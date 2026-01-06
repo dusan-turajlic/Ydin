@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import {
     ProgressIndicator,
     Button,
@@ -8,7 +8,7 @@ import {
     CollapsibleSection,
     NutrientRow,
 } from "@ydin/design-system";
-import { ChevronLeft, Plus, Minus } from "@ydin/design-system/icons";
+import { Plus, Minus } from "@ydin/design-system/icons";
 import { getByBarcode } from "@/services/api/openFoodDex";
 import type { Product } from "@/modals";
 import { extractMacros, calculateCaloriesFromMacros, calculatePercentageOfTarget } from "@/utils/macros";
@@ -17,17 +17,21 @@ import { useSheetContentHeight } from "@/hooks/useSheetContentHeight";
 import { NUTRIENT_COLORS } from "@/constants/colors";
 import { targetsAtom } from "@/atoms/targets";
 import { addFoodEntryAtom } from "@/atoms/day";
+import { logHourAtom } from "@/atoms/time";
+import { sheetExpandedAtom } from "@/atoms/sheet";
+import { addItem as addDiaryItem } from "@/services/storage/diary";
+import { Day } from "@/domain";
 
 interface ProductDetailProps {
     code: string;
-    /** Optional time to log the food at (defaults to current time) */
-    logTime?: Date;
 }
 
-export default function ProductDetail({ code, logTime }: Readonly<ProductDetailProps>) {
+export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
     const navigate = useNavigate();
     const targets = useAtomValue(targetsAtom);
     const addFoodEntry = useSetAtom(addFoodEntryAtom);
+    const [logHour, setLogHour] = useAtom(logHourAtom);
+    const setIsExpanded = useSetAtom(sheetExpandedAtom);
     const [product, setProduct] = useState<Product | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -52,13 +56,15 @@ export default function ProductDetail({ code, logTime }: Readonly<ProductDetailP
         fetchProduct();
     }, [code]);
 
-    const handleLogFood = () => {
+    const handleLogFood = async () => {
         if (!product) return;
 
-        addFoodEntry({
+        // Get today's date
+        const today = Day.today();
+
+        const entryData = {
             code: product.code,
             name: product.product_name ?? "Unknown",
-            time: logTime ?? new Date(),
             servingCount,
             servingSize: product.macros?.serving_size ?? 100,
             unit: product.macros?.serving_unit ?? "g",
@@ -70,8 +76,19 @@ export default function ProductDetail({ code, logTime }: Readonly<ProductDetailP
                 fiber: macros.fiber,
                 sugars: macros.sugars,
             },
+        };
+
+        // Persist to database
+        await addDiaryItem(today, logHour, entryData);
+
+        // Update in-memory state for immediate UI feedback
+        addFoodEntry({
+            ...entryData,
+            time: today.atHour(logHour),
         });
 
+        setLogHour(null);
+        setIsExpanded(false);
         navigate("/food");
     };
 
@@ -134,13 +151,6 @@ export default function ProductDetail({ code, logTime }: Readonly<ProductDetailP
             <div className="flex-1 overflow-y-auto pb-4">
                 {/* Header with back button and product name */}
                 <div className="flex items-start gap-3 mb-4">
-                    <button
-                        type="button"
-                        onClick={() => navigate("/food")}
-                        className="p-1 -ml-1 text-foreground-secondary hover:text-foreground transition-colors"
-                    >
-                        <ChevronLeft className="h-6 w-6" />
-                    </button>
                     <h1 className="text-xl font-bold text-foreground capitalize flex-1">
                         {product.product_name ?? "Unknown Product"}
                     </h1>
@@ -235,7 +245,7 @@ export default function ProductDetail({ code, logTime }: Readonly<ProductDetailP
                 </CollapsibleSection>
 
                 {/* Fat Breakdown */}
-                <CollapsibleSection title="Fat Breakdown">
+                <CollapsibleSection title="Fat Breakdown" defaultOpen>
                     <NutrientRow label="Fat" value={macros.fat} target={targets.fat} unit="g" color={NUTRIENT_COLORS.fat} />
                     <NutrientRow label="Monounsaturated" value={0} unit="g" />
                     <NutrientRow label="Polyunsaturated" value={0} unit="g" />
@@ -249,7 +259,7 @@ export default function ProductDetail({ code, logTime }: Readonly<ProductDetailP
                 </CollapsibleSection>
 
                 {/* Protein Breakdown */}
-                <CollapsibleSection title="Protein Breakdown">
+                <CollapsibleSection title="Protein Breakdown" defaultOpen>
                     <NutrientRow label="Protein" value={macros.protein} target={targets.protein} unit="g" color={NUTRIENT_COLORS.protein} />
                     <NutrientRow label="Cystine" value={0} unit="g" />
                     <NutrientRow label="Histidine" value={0} unit="g" />
@@ -265,7 +275,7 @@ export default function ProductDetail({ code, logTime }: Readonly<ProductDetailP
                 </CollapsibleSection>
 
                 {/* Vitamins */}
-                <CollapsibleSection title="Vitamins">
+                <CollapsibleSection title="Vitamins" defaultOpen>
                     <NutrientRow label="B1 Thiamine" value={0} target={targets.thiamine} unit="mg" color={NUTRIENT_COLORS.vitamins} />
                     <NutrientRow label="B2 Riboflavin" value={0} target={targets.riboflavin} unit="mg" color={NUTRIENT_COLORS.vitamins} />
                     <NutrientRow label="B3 Niacin" value={0} target={targets.niacin} unit="mg" color={NUTRIENT_COLORS.vitamins} />
@@ -281,7 +291,7 @@ export default function ProductDetail({ code, logTime }: Readonly<ProductDetailP
                 </CollapsibleSection>
 
                 {/* Minerals */}
-                <CollapsibleSection title="Minerals">
+                <CollapsibleSection title="Minerals" defaultOpen>
                     <NutrientRow label="Calcium" value={0} target={targets.calcium} unit="mg" color={NUTRIENT_COLORS.minerals} />
                     <NutrientRow label="Copper" value={0} target={targets.copper} unit="mg" color={NUTRIENT_COLORS.minerals} />
                     <NutrientRow label="Iron" value={0} target={targets.iron} unit="mg" color={NUTRIENT_COLORS.minerals} />
@@ -295,8 +305,7 @@ export default function ProductDetail({ code, logTime }: Readonly<ProductDetailP
                 </CollapsibleSection>
 
                 {/* Other */}
-                <CollapsibleSection title="Other">
-                    <NutrientRow label="Calories" value={macros.calories} target={targets.calories} unit="kcal" color={NUTRIENT_COLORS.calories} />
+                <CollapsibleSection title="Other" defaultOpen>
                     <NutrientRow label="Alcohol" value={0} unit="g" />
                     <NutrientRow label="Caffeine" value={0} target={targets.caffeine} unit="mg" color={NUTRIENT_COLORS.caffeine} />
                     <NutrientRow label="Cholesterol" value={0} target={targets.cholesterol} unit="mg" color={NUTRIENT_COLORS.cholesterol} />

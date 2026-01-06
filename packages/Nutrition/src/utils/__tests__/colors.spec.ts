@@ -9,15 +9,15 @@ describe('getPercentageBadgeColor', () => {
     });
 
     it('returns yellow for percentages between 16 and 40', () => {
-        expect(getPercentageBadgeColor(16)).toBe('bg-yellow-600');
-        expect(getPercentageBadgeColor(25)).toBe('bg-yellow-600');
-        expect(getPercentageBadgeColor(40)).toBe('bg-yellow-600');
+        expect(getPercentageBadgeColor(16)).toBe('bg-amber-600');
+        expect(getPercentageBadgeColor(25)).toBe('bg-amber-600');
+        expect(getPercentageBadgeColor(40)).toBe('bg-amber-600');
     });
 
     it('returns green for percentages above 40', () => {
-        expect(getPercentageBadgeColor(41)).toBe('bg-green-600');
-        expect(getPercentageBadgeColor(60)).toBe('bg-green-600');
-        expect(getPercentageBadgeColor(100)).toBe('bg-green-600');
+        expect(getPercentageBadgeColor(41)).toBe('bg-emerald-600');
+        expect(getPercentageBadgeColor(60)).toBe('bg-emerald-600');
+        expect(getPercentageBadgeColor(100)).toBe('bg-emerald-600');
     });
 
     it('handles negative percentages', () => {
@@ -25,13 +25,13 @@ describe('getPercentageBadgeColor', () => {
     });
 
     it('handles percentages over 100', () => {
-        expect(getPercentageBadgeColor(150)).toBe('bg-green-600');
+        expect(getPercentageBadgeColor(150)).toBe('bg-emerald-600');
     });
 });
 
 describe('getMacroColor', () => {
     it('returns correct color for calories', () => {
-        expect(getMacroColor('calories')).toBe('#60A5FA');
+        expect(getMacroColor('calories')).toBe('#E4B962');
     });
 
     it('returns correct color for protein', () => {

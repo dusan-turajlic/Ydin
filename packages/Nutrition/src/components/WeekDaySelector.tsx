@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { DayButton } from "@ydin/design-system";
 import useEmblaCarousel from 'embla-carousel-react'
-import { dateTimeStartOfDay, USER_LOCAL_LANGUAGE, type DateStartOfDay } from "@/utils/browser";
-import { addDays, makeWeekAfter, getWeekAfter, getWeekBefore } from "@/utils/date";
+import { Day, DateConfig, type CoreDate, type Week } from "@/domain";
 
 function WeekDaySelector() {
     const shouldAppendRef = useRef<string | null>(null);
-    const today = useMemo(() => dateTimeStartOfDay(), []);
+
     const [emblaRef, emblaApi] = useEmblaCarousel({
         align: "start",
         dragFree: false,
@@ -14,35 +13,30 @@ function WeekDaySelector() {
         skipSnaps: false,
         startIndex: 1
     });
-    const [selectedDate, setSelectedDate] = useState<DateStartOfDay>(today);
-    const [weeks, setWeeks] = useState(() => {
-        // Add days to today to get the start of the week and plus one so we get Monday and not Sunday
-        const thisWeekStart = addDays(today, -(today.date.getDay() - 1));
-        const thisWeek = makeWeekAfter(thisWeekStart);
-        const nextWeek = getWeekAfter(thisWeek);
-        const prevWeek = getWeekBefore(thisWeek);
+
+    // Initialize state with lazy initializers (run once on mount)
+    const [selectedDateUUID, setSelectedDateUUID] = useState(() => Day.toUUID(Day.today()));
+
+    const [weeks, setWeeks] = useState<Week[]>(() => {
+        const thisWeek = Day.getWeek(Day.today());
         return [
-            prevWeek,
+            thisWeek.prev(),
             thisWeek,
-            nextWeek
+            thisWeek.next()
         ];
     });
-
 
     const appendNextWeek = useCallback(() => {
         setWeeks((curr) => {
             const lastWeek = curr.at(-1)!;
-            const nextWeek = getWeekAfter(lastWeek);
-            return [...curr, nextWeek];
+            return [...curr, lastWeek.next()];
         });
     }, []);
-
 
     const prependPrevWeek = useCallback(() => {
         setWeeks((curr) => {
             const firstWeek = curr[0];
-            const prevWeek = getWeekBefore(firstWeek);
-            return [prevWeek, ...curr];
+            return [firstWeek.prev(), ...curr];
         });
     }, []);
 
@@ -83,11 +77,20 @@ function WeekDaySelector() {
             <div ref={emblaRef} className="bg-surface-base overflow-hidden">
                 <div className="flex">
                     {weeks.map((week) => (
-                        <div key={week.map(({ uuid }) => uuid).join('-')} className="embla__container w-full flex justify-center items-center gap-1 px-4">
-                            {week.map((dates: DateStartOfDay) => {
-                                const day = dates.date.toLocaleDateString(USER_LOCAL_LANGUAGE, { weekday: 'short' });
-                                const date = dates.date.getDate();
-                                return <DayButton key={dates.uuid} day={day.toUpperCase()} date={date} active={dates.uuid === selectedDate.uuid} onClick={() => setSelectedDate(dates)} />
+                        <div key={week.uuid} className="embla__container w-full flex justify-center items-center gap-1 px-4">
+                            {week.days.map((coreDate: CoreDate) => {
+                                const dayUUID = Day.toUUID(coreDate);
+                                const dayLabel = Day.toShortWeekday(coreDate, DateConfig.locale);
+                                const dateNum = coreDate.dayOfMonth;
+                                return (
+                                    <DayButton
+                                        key={dayUUID}
+                                        day={dayLabel.toUpperCase()}
+                                        date={dateNum}
+                                        active={dayUUID === selectedDateUUID}
+                                        onClick={() => setSelectedDateUUID(dayUUID)}
+                                    />
+                                );
                             })}
                         </div>
                     ))}
@@ -98,4 +101,3 @@ function WeekDaySelector() {
 }
 
 export default WeekDaySelector;
-

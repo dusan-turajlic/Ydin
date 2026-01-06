@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
-import { useAtom } from "jotai";
+import { useState, useEffect, useRef } from "react";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useNavigate } from "react-router-dom";
 import { ModalSheet, ModalSheetPeek, ModalSheetContent, SearchInput, TabGroup, TabButton, Button } from "@ydin/design-system";
-import { Scan, ScanBarcode, Search, Clock } from "@ydin/design-system/icons";
+import { Scan, ScanBarcode, Search, Clock, ChevronLeft, X } from "@ydin/design-system/icons";
 import SearchResults from "@/components/SearchResults";
 import Scanner from "@/components/Scanner";
 import ProductDetail from "@/components/ProductDetail";
 import { sheetExpandedAtom } from "@/atoms/sheet";
+import { logHourAtom } from "@/atoms/time";
 
 const SCAN_TAB_INDEX = 0;
 const SEARCH_TAB_INDEX = 1;
@@ -20,6 +21,9 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
     const [isExpanded, setIsExpanded] = useAtom(sheetExpandedAtom);
     const [activeTab, setActiveTab] = useState(SEARCH_TAB_INDEX);
     const [searchQuery, setSearchQuery] = useState("");
+    const logHour = useAtomValue(logHourAtom);
+    const setLogHour = useSetAtom(logHourAtom);
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
     // Auto-expand when viewing product details
     useEffect(() => {
@@ -27,6 +31,17 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
             setIsExpanded(true);
         }
     }, [code, setIsExpanded]);
+
+    // Auto-focus search input when sheet expands and search tab is active
+    useEffect(() => {
+        if (isExpanded && activeTab === SEARCH_TAB_INDEX && !code) {
+            // Small delay to ensure the DOM is ready after animation
+            const timeoutId = setTimeout(() => {
+                searchInputRef.current?.focus();
+            }, 100);
+            return () => clearTimeout(timeoutId);
+        }
+    }, [isExpanded, activeTab, code]);
 
     const handleTabChange = (index: number) => {
         setActiveTab(index);
@@ -37,11 +52,8 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
         navigate("/food");
     };
 
-    // Get current time for the action bar
-    const currentTime = new Date().toLocaleTimeString([], {
-        hour: "numeric",
-        minute: "2-digit",
-    });
+    // Display time from atom (selected or current hour)
+    const displayTime = `${logHour}:00`;
 
     const tabs = [
         {
@@ -66,6 +78,8 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
                 setIsExpanded(open);
                 if (!open) {
                     setActiveTab(SEARCH_TAB_INDEX);
+                    // Clear selected hour when closing
+                    setLogHour(null);
                     // Navigate back if closing product detail
                     if (isViewingProduct) {
                         navigate("/food");
@@ -78,24 +92,29 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
                 {isViewingProduct ? (
                     // Product detail action bar
                     <div className="flex items-center justify-between py-2">
-                        <div /> {/* Spacer for centering */}
-                        <div className="flex items-center gap-2 bg-muted rounded-full px-3 py-1.5">
-                            <Clock className="h-4 w-4 text-foreground-secondary" />
-                            <span className="text-sm text-foreground">{currentTime}</span>
-                        </div>
-                        <Button
-                            variant="default"
-                            size="sm"
-                            onClick={handleCloseProductDetail}
+                        <button
+                            type="button"
+                            onClick={() => navigate("/food")}
+                            className="p-1 -ml-1 text-foreground-secondary hover:text-foreground transition-colors"
                         >
-                            Done
-                        </Button>
+                            <ChevronLeft className="h-6 w-6" />
+                        </button>
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 bg-muted rounded-full px-3 py-1.5">
+                                <Clock className="h-4 w-4 text-foreground-secondary" />
+                                <span className="text-sm text-foreground">{displayTime}</span>
+                            </div>
+                            <Button variant="secondary" size="icon-sm" onClick={handleCloseProductDetail}>
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
                 ) : (
                     // Search input (default view)
                     activeTab === SEARCH_TAB_INDEX && (
                         <div className="py-2">
                             <SearchInput
+                                ref={searchInputRef}
                                 placeholder="Search for a food..."
                                 onFocus={() => setIsExpanded(true)}
                                 onSearch={setSearchQuery}

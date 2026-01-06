@@ -12,8 +12,8 @@ export { default as IndexDBProvider } from "./indexDB";
 export { default as LocalStorageProvider } from "./localstorage";
 export { default as SQLiteProvider } from "./sqlite";
 
-// Re-export assets (WASM URL for SQLite)
-export { wasmUrl } from "./assets/wasm";
+// Re-export assets (WASM URL and caching utilities for SQLite)
+export { wasmUrl, getCachedWasmUrl, clearWasmCache } from "./assets/wasm";
 
 export type ProviderType = 'local' | 'indexDB' | 'sqlite';
 

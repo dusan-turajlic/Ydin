@@ -20,6 +20,10 @@ Welcome to Ydin! This guide will help you understand the codebase architecture a
   - [What to Test at Each Level](#what-to-test-at-each-level)
   - [Error Testing Strategy](#error-testing-strategy)
 - [Common Patterns](#common-patterns)
+- [Date & Time Handling](#date--time-handling)
+  - [Why We Don't Use Raw Date Objects](#why-we-dont-use-raw-date-objects)
+  - [The Date Domain Layer](#the-date-domain-layer)
+  - [Date Domain Usage Guide](#date-domain-usage-guide)
 
 ---
 
@@ -28,14 +32,14 @@ Welcome to Ydin! This guide will help you understand the codebase architecture a
 ```bash
 # 1. Clone and install
 git clone <repository-url>
-cd Ydin/app
-npm install
+cd Ydin
+pnpm install
 
 # 2. Start development server
-npm run dev
+pnpm dev
 
 # 3. Run tests (in another terminal)
-npm run test
+pnpm test
 ```
 
 The app runs at `http://localhost:5173` by default.
@@ -64,9 +68,13 @@ Ydin follows a **layered architecture** inspired by the MVC pattern, adapted for
 │    API calls, data transformation, business rules                   │
 │                        src/services/                                │
 ├─────────────────────────────────────────────────────────────────────┤
+│                       DOMAIN (Core Logic)                            │
+│    Date/time handling, business entities                            │
+│                        src/domain/                                  │
+├─────────────────────────────────────────────────────────────────────┤
 │                      PROVIDERS (Data Access)                         │
 │    Database operations, storage abstraction                         │
-│                        src/providers/                               │
+│                   packages/StorageProvider/                         │
 ├─────────────────────────────────────────────────────────────────────┤
 │                         MODELS (Data Types)                          │
 │    TypeScript interfaces and type definitions                       │
@@ -87,62 +95,71 @@ User Action → Component → Atom (state) → Service → Provider → Storage
 ## Code Organization
 
 ```
-app/src/
+packages/Nutrition/src/
 ├── atoms/                  # Jotai atoms (global state)
-│   └── loggerDialog.ts     # Food logger dialog state
+│   ├── day.ts              # Selected day state
+│   ├── sheet.ts            # Modal sheet state
+│   ├── targets.ts          # Nutrition target state
+│   └── time.ts             # Time-related state
 │
 ├── components/             # Reusable UI components
-│   ├── Dialog/             # Modal/dialog components
-│   │   ├── FoodItem.tsx          # Food detail view
-│   │   ├── FoodLoggerDialog.tsx  # Main dialog container
-│   │   ├── LoggerLauncher.tsx    # Tab-based launcher
-│   │   ├── LoggerQuickActions.tsx
-│   │   └── LauncherTabs/         # Individual tab content
-│   │       ├── index.tsx
-│   │       ├── QuickAdd.tsx
-│   │       ├── Scanner.tsx
-│   │       └── Search.tsx
-│   ├── DayButton.tsx
-│   ├── DiaryTracker.tsx
-│   ├── FoodItem.tsx        # Food list item (reusable)
-│   ├── Spinner.tsx
-│   ├── TabMenu.tsx
-│   └── WeekDaySelector.tsx
+│   ├── DiaryTracker.tsx    # Main diary view
+│   ├── FoodSearchSheet.tsx # Food search modal
+│   ├── ProductDetail.tsx   # Food item detail view
+│   ├── Scanner.tsx         # Barcode scanner
+│   ├── SearchResults.tsx   # Search results list
+│   ├── TopNavigation.tsx   # Top navigation bar
+│   ├── WeekDaySelector.tsx # Week/day navigation
+│   └── ui/                 # Small UI primitives
+│
+├── domain/                 # Date/time domain layer (see Date & Time Handling)
+│   ├── CoreDate.ts         # Immutable UTC date wrapper
+│   ├── DateConfig.ts       # Locale/format configuration
+│   ├── Day.ts              # Day-level operations
+│   ├── Time.ts             # Time-level operations
+│   ├── Week.ts             # Week container class
+│   └── index.ts            # Domain exports
 │
 ├── hooks/                  # Custom React hooks
-│   └── useOpenFoodDex.ts   # Food database initialization
+│   ├── useOpenFoodDex.ts   # Food database initialization
+│   └── useSheetContentHeight.ts
 │
 ├── modals/                 # Data models/interfaces (TypeScript types)
 │   └── index.ts            # IOpenFoodDexObject, Product, etc.
 │
-├── providers/              # Data access layer (storage abstraction)
+├── services/               # Business logic & external APIs
+│   ├── api/
+│   │   └── openFoodDex/    # Food database service
+│   └── storage/
+│       ├── diary/          # Diary-specific storage logic
+│       └── foodTracker/    # Food tracking storage
+│
+├── utils/                  # Pure utility functions
+│   ├── colors.ts           # Color utilities
+│   ├── debounce.ts         # Debounce helper
+│   ├── format.ts           # Formatting utilities
+│   └── macros.ts           # Macro calculations
+│
+├── views/                  # Page-level components
+│   ├── Tracker.tsx         # Main food tracking page
+│   └── NotFound.tsx        # 404 page
+│
+├── constants/              # App-wide constants
+│   ├── colors.ts
+│   ├── nutrition.ts
+│   └── tabs.ts
+│
+├── App.tsx                 # Root component with routing
+├── main.tsx               # Entry point
+└── index.css              # Global styles
+
+packages/StorageProvider/   # Separate package for storage abstraction
+├── src/
 │   ├── base.ts             # Abstract base provider
 │   ├── index.ts            # Provider factory
 │   ├── indexDB/            # IndexedDB implementation
 │   ├── localstorage/       # LocalStorage implementation
 │   └── sqlite/             # SQLite WASM implementation
-│
-├── services/               # Business logic & external APIs
-│   ├── api/
-│   │   └── openFoodDex/    # Food database service
-│   │       ├── index.ts          # Main exports (search, fetch)
-│   │       ├── worker.ts         # Web Worker for data indexing
-│   │       ├── searchWorker.ts
-│   │       └── iconBasedOnCategorie.ts
-│   └── storage/
-│       └── diaryTracker/   # Diary-specific storage logic
-│
-├── utils/                  # Pure utility functions
-│   ├── browser.ts          # Browser/locale utilities
-│   └── uuid.ts             # UUID generation
-│
-├── views/                  # Page-level components
-│   └── Tracker.tsx         # Main food tracking page
-│
-├── constants.ts            # App-wide constants
-├── App.tsx                 # Root component with routing
-├── main.tsx               # Entry point
-└── index.css              # Global styles
 ```
 
 ---
@@ -761,19 +778,19 @@ it('handles null response body', () => {
 
 ```bash
 # All tests
-npm run test
+pnpm test
 
 # Unit tests only (jsdom)
-npm run test:unit
+pnpm test:unit
 
 # E2E tests only (real browser)
-npm run test:e2e
+pnpm test:e2e
 
 # Interactive UI
-npm run test:ui
+pnpm test:ui
 
 # With coverage report
-npm run test:coverage
+pnpm test:coverage
 ```
 
 ### Quick Reference
@@ -849,6 +866,259 @@ setState({
     state: LoggerDialogState.FOOD_ITEM,
     metadata: { barcode: '12345' }
 });
+```
+
+---
+
+## Date & Time Handling
+
+### Why We Don't Use Raw Date Objects
+
+> ⚠️ **NEVER use the native JavaScript `Date` object directly in this codebase.**
+
+The native `Date` object has well-documented problems:
+- **Timezone confusion** - `Date` mixes local and UTC representations unpredictably
+- **Mutability** - Methods like `setDate()` mutate the object, causing bugs
+- **Inconsistent APIs** - `getMonth()` is 0-indexed, `getDate()` returns day of month, `getDay()` returns weekday
+- **Locale handling** - Formatting depends on system locale, which varies across environments
+
+Instead, we use a **Date Domain Layer** that provides:
+- Immutable date objects (all operations return new instances)
+- Consistent UTC normalization
+- Configurable locale/week settings via `DateConfig`
+- Clear separation between day-level and time-level operations
+
+### The Date Domain Layer
+
+The domain layer consists of four main exports:
+
+| Class/Object | Purpose | Instance/Static |
+|--------------|---------|-----------------|
+| `CoreDate` | Immutable UTC date wrapper | Instance class |
+| `Day` | Day-level operations (today, add days, format) | Static utility class |
+| `Week` | 7-day week container with navigation | Instance class |
+| `Time` | Time-level operations (hours, minutes, format) | Static utility class |
+| `DateConfig` | Locale and formatting configuration | Singleton object |
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         DateConfig (Singleton)                       │
+│    Stores: locale, hour12, weekStartsOn                             │
+│    Used by: Day, Week, Time for formatting                          │
+├─────────────────────────────────────────────────────────────────────┤
+│                         CoreDate (Instance)                          │
+│    Immutable UTC date wrapper                                        │
+│    Created via: CoreDate.now(), CoreDate.fromDate(), fromISO()      │
+│    Operations: addDays(), atHour(), atTime(), atStartOfDay()        │
+├─────────────────────────────────────────────────────────────────────┤
+│      Day (Static)          │      Week (Instance)                    │
+│  Day-level operations      │  7-day container                        │
+│  Uses CoreDate internally  │  Uses CoreDate for each day             │
+├─────────────────────────────────────────────────────────────────────┤
+│                         Time (Static)                                │
+│    Time-level operations (hours, minutes)                            │
+│    Formatting respects DateConfig.hour12                             │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Date Domain Usage Guide
+
+#### Import from the domain layer
+
+```typescript
+import { CoreDate, Day, Week, Time, DateConfig } from '@/domain';
+```
+
+#### Getting the current date/time
+
+```typescript
+// ✅ Good: Use Day.today() for the current day (00:00 UTC)
+const today = Day.today();
+
+// ✅ Good: Use CoreDate.now() for current moment with time
+const now = CoreDate.now();
+
+// ❌ Bad: Never use new Date()
+const bad = new Date();  // Don't do this!
+```
+
+#### Working with days
+
+```typescript
+// Get today
+const today = Day.today();
+
+// Add or subtract days
+const tomorrow = Day.add(today, 1);
+const yesterday = Day.add(today, -1);
+
+// Check if two dates are the same day
+if (Day.isSame(dateA, dateB)) {
+    // Same calendar day
+}
+
+// Get start of day (00:00 UTC)
+const startOfDay = Day.startOf(someDate);
+
+// Format a day
+const formatted = Day.format(today, { weekday: 'long', month: 'short', day: 'numeric' });
+// → "Monday, Jan 6"
+
+// Get short weekday name
+const weekday = Day.toShortWeekday(today);
+// → "Mon"
+
+// Generate a deterministic UUID for a date
+const uuid = Day.toUUID(today);
+```
+
+#### Working with weeks
+
+```typescript
+// Get the week containing today
+const currentWeek = Day.getWeek(Day.today());
+// or
+const currentWeek = new Week(CoreDate.now());
+
+// Access the week's properties
+currentWeek.start;  // CoreDate of week start (Monday or Sunday per config)
+currentWeek.days;   // Array of 7 CoreDate objects
+currentWeek.uuid;   // Deterministic UUID for this week
+
+// Navigate between weeks
+const nextWeek = currentWeek.next();
+const prevWeek = currentWeek.prev();
+
+// Check if a date is in this week
+if (currentWeek.contains(someDate)) {
+    // Date is within this week
+}
+```
+
+#### Working with time
+
+```typescript
+// Set a specific hour on a date
+const atNoon = Time.withHour(today, 12);
+
+// Set hour and minute
+const at1430 = Time.withTime(today, 14, 30);
+
+// Format time respecting DateConfig.hour12
+const label = Time.toLabel(at1430);
+// → "14:30" (if hour12 = false)
+// → "2:30 PM" (if hour12 = true)
+
+// Generate a time-based UUID
+const timeUuid = Time.toUUID(someDateTime, namespaceUuid);
+```
+
+#### Configuring locale and format
+
+```typescript
+import { DateConfig } from '@/domain';
+
+// Update configuration (e.g., from user preferences)
+DateConfig.set({
+    locale: 'sv-SE',      // Swedish locale
+    hour12: false,        // 24-hour clock
+    weekStartsOn: 'monday' // Week starts on Monday
+});
+
+// Reset to defaults
+DateConfig.reset();
+
+// Current values
+console.log(DateConfig.locale);      // "sv-SE"
+console.log(DateConfig.hour12);      // false
+console.log(DateConfig.weekStartsOn); // "monday"
+```
+
+#### CoreDate basics (low-level)
+
+Most of the time you'll use `Day`, `Week`, and `Time`. But for direct manipulation:
+
+```typescript
+// Create from various sources
+const now = CoreDate.now();
+const fromJs = CoreDate.fromDate(new Date());
+const fromIso = CoreDate.fromISO('2026-01-06T14:30:00Z');
+
+// Access components (all UTC)
+now.year;       // 2026
+now.month;      // 0 (January, 0-indexed)
+now.dayOfMonth; // 6
+now.hours;      // 14
+now.minutes;    // 30
+now.weekday;    // 0-6 (0 = Sunday)
+now.timestamp;  // Unix timestamp in ms
+
+// Immutable operations
+const tomorrow = now.addDays(1);
+const atMidnight = now.atStartOfDay();
+const atNoon = now.atHour(12);
+const at1430 = now.atTime(14, 30);
+
+// Formatting
+now.toISOString();  // "2026-01-06T14:30:00.000Z"
+now.formatDate({ weekday: 'short' }, 'en-US');  // "Tue"
+now.formatTime({ hour: '2-digit', minute: '2-digit' });  // "14:30"
+
+// Comparison
+dateA.equals(dateB);   // Same timestamp?
+dateA.isBefore(dateB); // dateA < dateB?
+dateA.isAfter(dateB);  // dateA > dateB?
+```
+
+#### Common patterns
+
+```typescript
+// ✅ Iterate through a week's days
+const week = Day.getWeek(Day.today());
+for (const day of week.days) {
+    console.log(Day.toShortWeekday(day), Day.format(day, { day: 'numeric' }));
+}
+
+// ✅ Get weekday index respecting config (0 = first day of week)
+const weekdayIndex = Day.getWeekdayIndex(someDate);
+// If weekStartsOn = 'monday': Mon=0, Tue=1, ..., Sun=6
+// If weekStartsOn = 'sunday': Sun=0, Mon=1, ..., Sat=6
+
+// ✅ Create entries keyed by date UUID
+const entries = new Map<string, DiaryEntry>();
+const key = Day.toUUID(Day.today());
+entries.set(key, myEntry);
+
+// ✅ Parse user-provided ISO string
+const userDate = CoreDate.fromISO(userInput);
+const normalizedDay = Day.startOf(userDate);
+```
+
+#### What NOT to do
+
+```typescript
+// ❌ NEVER use raw Date
+const bad = new Date();
+const alsoBad = new Date('2026-01-06');
+
+// ❌ NEVER compare dates with ===
+if (dateA.date === dateB.date) // Wrong!
+
+// ✅ Use Day.isSame() or CoreDate.equals()
+if (Day.isSame(dateA, dateB)) // Correct!
+if (dateA.equals(dateB)) // Also correct!
+
+// ❌ NEVER mutate dates
+someDate.date.setDate(10); // Mutating the internal Date!
+
+// ✅ Use immutable operations
+const newDate = someDate.addDays(1); // Returns new instance
+
+// ❌ NEVER access .getMonth(), .getDate() etc. on the raw Date
+const month = someDate.date.getMonth(); // Avoid!
+
+// ✅ Use the typed accessors
+const month = someDate.month; // Clean!
 ```
 
 ---

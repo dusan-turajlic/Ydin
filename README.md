@@ -2,13 +2,13 @@
 
 **Ydin** is a brand name for a suite of open-source health and wellness applications. Each app under the Ydin umbrella is its own independent application, built with modern web technologies and designed to work seamlessly together.
 
-## Apps
+## Packages
 
 | Package | Description | README |
 |---------|-------------|--------|
 | **Nutrition** | Macro and calorie tracking app | [View](./packages/Nutrition/README.md) |
 | **Design System** | Shared component library | [View](./packages/DesignSystem/README.md) |
-| **E2E** | End-to-end testing suite | [View](./packages/E2E/README.md) |
+| **StorageProvider** | Storage abstraction layer (SQLite, IndexedDB, LocalStorage) | [View](./packages/StorageProvider/README.md) |
 
 ## Tech Stack
 
@@ -61,7 +61,7 @@ Ydin/
 └── packages/
     ├── Nutrition/            # Macro & calorie tracking app
     ├── DesignSystem/         # Shared component library
-    └── E2E/                  # End-to-end tests
+    └── StorageProvider/      # Storage abstraction layer
 ```
 
 ## Available Commands
