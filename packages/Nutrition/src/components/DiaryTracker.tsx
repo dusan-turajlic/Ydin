@@ -1,28 +1,17 @@
-import { useEffect, useState } from "react";
-import { useSetAtom } from "jotai";
-import { Day, Time } from "@/domain";
+import { useSetAtom, useAtomValue } from "jotai";
+import { Time } from "@/domain";
 import { Plus } from "@ydin/design-system/icons";
 import { Button, FoodCard } from "@ydin/design-system";
 import { logHourAtom, generateTimeSlots } from "@/atoms/time";
 import { sheetExpandedAtom } from "@/atoms/sheet";
-import { getDay, type DayEntries } from "@/services/storage/diary";
+import { dayEntriesAtom, selectedDayUUIDAtom } from "@/atoms/day";
 
 function DiaryTracker() {
     const timeSlots = generateTimeSlots();
-    const today = Day.today();
-    const todayUUID = Day.toUUID(today);
+    const selectedDayUUID = useAtomValue(selectedDayUUIDAtom);
+    const dayEntries = useAtomValue(dayEntriesAtom);
     const setLogHour = useSetAtom(logHourAtom);
     const setIsExpanded = useSetAtom(sheetExpandedAtom);
-    const [dayEntries, setDayEntries] = useState<DayEntries>({});
-
-    // Fetch entries for today on mount
-    useEffect(() => {
-        async function fetchEntries() {
-            const entries = await getDay(today);
-            setDayEntries(entries);
-        }
-        fetchEntries();
-    }, [todayUUID]);
 
     return (
         <div className="flow-root">
@@ -30,7 +19,7 @@ function DiaryTracker() {
                 {timeSlots.map((timeSlot, idx) => {
                     const label = Time.toLabel(timeSlot);
                     const hour = timeSlot.hours;
-                    const uuid = Time.toUUID(timeSlot, todayUUID);
+                    const uuid = Time.toUUID(timeSlot, selectedDayUUID);
                     return (
                         <li key={uuid}>
                             <div className="relative pb-5">

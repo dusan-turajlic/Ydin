@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSetAtom, useAtomValue } from "jotai";
 import { DayButton } from "@ydin/design-system";
 import useEmblaCarousel from 'embla-carousel-react'
 import { Day, DateConfig, type CoreDate, type Week } from "@/domain";
+import { selectedDayAtom, selectedDayUUIDAtom } from "@/atoms/day";
 
 function WeekDaySelector() {
     const shouldAppendRef = useRef<string | null>(null);
@@ -14,8 +16,9 @@ function WeekDaySelector() {
         startIndex: 1
     });
 
-    // Initialize state with lazy initializers (run once on mount)
-    const [selectedDateUUID, setSelectedDateUUID] = useState(() => Day.toUUID(Day.today()));
+    // Use the centralized selected day atom
+    const setSelectedDay = useSetAtom(selectedDayAtom);
+    const selectedDayUUID = useAtomValue(selectedDayUUIDAtom);
 
     const [weeks, setWeeks] = useState<Week[]>(() => {
         const thisWeek = Day.getWeek(Day.today());
@@ -87,8 +90,8 @@ function WeekDaySelector() {
                                         key={dayUUID}
                                         day={dayLabel.toUpperCase()}
                                         date={dateNum}
-                                        active={dayUUID === selectedDateUUID}
-                                        onClick={() => setSelectedDateUUID(dayUUID)}
+                                        active={dayUUID === selectedDayUUID}
+                                        onClick={() => setSelectedDay(coreDate)}
                                     />
                                 );
                             })}

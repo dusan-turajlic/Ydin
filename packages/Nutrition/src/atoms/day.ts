@@ -1,5 +1,6 @@
 import { atom } from "jotai";
-import type { CoreDate } from "@/domain";
+import { Day, type CoreDate } from "@/domain";
+import { getDay, addItem, type DayEntries, type AddDiaryItemInput } from "@/services/storage/diary";
 
 /**
  * Macro values for a food entry
@@ -14,30 +15,98 @@ export interface FoodMacros {
     // Add more as needed
 }
 
+// ─────────────────────────────────────────────────────────────
+// Selected Day Atom
+// ─────────────────────────────────────────────────────────────
+
 /**
- * A single food entry logged for the day
+ * The currently selected day for viewing/logging entries.
+ * Defaults to today. Set by WeekDaySelector.
  */
-export interface FoodEntry {
-    id: string;
-    code: string;
-    name: string;
-    time: CoreDate;
-    servingCount: number;
-    servingSize: number;
-    unit: string;
-    macros: FoodMacros;
+export const selectedDayAtom = atom<CoreDate>(Day.today());
+
+/**
+ * Derived atom for the selected day's UUID (for comparison)
+ */
+export const selectedDayUUIDAtom = atom((get) => {
+    return Day.toUUID(get(selectedDayAtom));
+});
+
+// ─────────────────────────────────────────────────────────────
+// Refresh Trigger
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Counter atom to trigger refetching of day entries.
+ * Increment this after adding/removing entries.
+ */
+export const refreshTriggerAtom = atom(0);
+
+/**
+ * Write-only atom to trigger a refresh of day entries
+ */
+export const triggerRefreshAtom = atom(
+    null,
+    (_get, set) => {
+        set(refreshTriggerAtom, (prev) => prev + 1);
+    }
+);
+
+// ─────────────────────────────────────────────────────────────
+// Day Entries Atom (async)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Async atom that fetches entries for the selected day.
+ * Automatically refetches when selectedDayAtom or refreshTriggerAtom changes.
+ */
+export const dayEntriesAtom = atom(async (get) => {
+    const selectedDay = get(selectedDayAtom);
+    // Subscribe to refresh trigger to enable refetching
+    get(refreshTriggerAtom);
+
+    const entries = await getDay(selectedDay);
+    return entries;
+});
+
+// ─────────────────────────────────────────────────────────────
+// Add Entry Atom
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Input for adding a new diary entry via the atom
+ */
+export interface AddEntryInput {
+    hour: number;
+    entry: AddDiaryItemInput;
 }
 
 /**
- * Atom containing all food entries for the current day
+ * Write-only atom that adds an entry to storage and triggers a refresh.
+ * Uses the currently selected day.
  */
-export const dailyFoodEntriesAtom = atom<FoodEntry[]>([]);
+export const addEntryAndRefreshAtom = atom(
+    null,
+    async (get, set, input: AddEntryInput) => {
+        const selectedDay = get(selectedDayAtom);
+
+        // Persist to storage
+        await addItem(selectedDay, input.hour, input.entry);
+
+        // Trigger refresh to update the UI
+        set(refreshTriggerAtom, (prev) => prev + 1);
+    }
+);
+
+// ─────────────────────────────────────────────────────────────
+// Daily Totals (computed from entries)
+// ─────────────────────────────────────────────────────────────
 
 /**
- * Derived atom that computes the total macros from all entries
+ * Derived atom that computes total macros from the day's entries
  */
-export const dailyTotalsAtom = atom((get) => {
-    const entries = get(dailyFoodEntriesAtom);
+export const dailyTotalsAtom = atom(async (get) => {
+    const entries = await get(dayEntriesAtom);
 
     const totals: FoodMacros = {
         calories: 0,
@@ -48,65 +117,20 @@ export const dailyTotalsAtom = atom((get) => {
         sugars: 0,
     };
 
-    for (const entry of entries) {
-        totals.calories += entry.macros.calories;
-        totals.protein += entry.macros.protein;
-        totals.fat += entry.macros.fat;
-        totals.carbs += entry.macros.carbs;
-        totals.fiber += entry.macros.fiber;
-        totals.sugars += entry.macros.sugars;
+    // Flatten all entries from all hours and sum up
+    for (const hourEntries of Object.values(entries)) {
+        for (const entry of hourEntries) {
+            totals.calories += entry.macros.calories;
+            totals.protein += entry.macros.protein;
+            totals.fat += entry.macros.fat;
+            totals.carbs += entry.macros.carbs;
+            totals.fiber += entry.macros.fiber;
+            totals.sugars += entry.macros.sugars;
+        }
     }
 
     return totals;
 });
 
-/**
- * Input for adding a new food entry
- */
-export interface AddFoodEntryInput {
-    code: string;
-    name: string;
-    time: CoreDate;
-    servingCount: number;
-    servingSize: number;
-    unit: string;
-    macros: FoodMacros;
-}
-
-/**
- * Write-only atom to add a food entry
- */
-export const addFoodEntryAtom = atom(
-    null,
-    (get, set, input: AddFoodEntryInput) => {
-        const entries = get(dailyFoodEntriesAtom);
-        const newEntry: FoodEntry = {
-            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            ...input,
-        };
-        set(dailyFoodEntriesAtom, [...entries, newEntry]);
-        return newEntry;
-    }
-);
-
-/**
- * Write-only atom to remove a food entry by id
- */
-export const removeFoodEntryAtom = atom(
-    null,
-    (get, set, id: string) => {
-        const entries = get(dailyFoodEntriesAtom);
-        set(dailyFoodEntriesAtom, entries.filter((entry) => entry.id !== id));
-    }
-);
-
-/**
- * Write-only atom to clear all entries for the day
- */
-export const clearDailyEntriesAtom = atom(
-    null,
-    (_get, set) => {
-        set(dailyFoodEntriesAtom, []);
-    }
-);
-
+// Re-export DayEntries type for convenience
+export type { DayEntries };
