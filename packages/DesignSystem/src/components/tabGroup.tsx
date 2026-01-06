@@ -82,7 +82,7 @@ export function TabGroup({ tabs, defaultTab = 0, onTabChange }: Readonly<TabGrou
           }}
         />
       </div>
-      <div className="rounded-xl bg-surface border border-border" role="tabpanel">
+      <div className="rounded-xl bg-surface" role="tabpanel">
         <motion.div
           key={activeTab}
           initial={{ opacity: 0, x: direction * 20 }}
