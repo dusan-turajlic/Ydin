@@ -20,6 +20,7 @@ import { addFoodEntryAtom } from "@/atoms/day";
 import { logHourAtom } from "@/atoms/time";
 import { sheetExpandedAtom } from "@/atoms/sheet";
 import { addItem as addDiaryItem } from "@/services/storage/diary";
+import { Day } from "@/domain";
 
 interface ProductDetailProps {
     code: string;
@@ -58,9 +59,8 @@ export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
     const handleLogFood = async () => {
         if (!product) return;
 
-        // Create Date with the selected/current hour
-        const logTime = new Date();
-        logTime.setHours(logHour, 0, 0, 0);
+        // Get today's date
+        const today = Day.today();
 
         const entryData = {
             code: product.code,
@@ -79,12 +79,12 @@ export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
         };
 
         // Persist to database
-        await addDiaryItem(logTime, logHour, entryData);
+        await addDiaryItem(today, logHour, entryData);
 
         // Update in-memory state for immediate UI feedback
         addFoodEntry({
             ...entryData,
-            time: logTime,
+            time: today.atHour(logHour),
         });
 
         setLogHour(null);

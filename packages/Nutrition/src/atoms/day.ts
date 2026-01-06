@@ -1,4 +1,5 @@
 import { atom } from "jotai";
+import type { CoreDate } from "@/domain";
 
 /**
  * Macro values for a food entry
@@ -20,7 +21,7 @@ export interface FoodEntry {
     id: string;
     code: string;
     name: string;
-    time: Date;
+    time: CoreDate;
     servingCount: number;
     servingSize: number;
     unit: string;
@@ -65,7 +66,7 @@ export const dailyTotalsAtom = atom((get) => {
 export interface AddFoodEntryInput {
     code: string;
     name: string;
-    time: Date;
+    time: CoreDate;
     servingCount: number;
     servingSize: number;
     unit: string;
