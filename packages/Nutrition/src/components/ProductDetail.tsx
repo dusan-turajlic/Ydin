@@ -12,7 +12,6 @@ import { getByBarcode } from "@/services/api/openFoodDex";
 import type { Product } from "@/modals";
 import { extractMacros, calculateCaloriesFromMacros, calculatePercentageOfTarget } from "@/utils/macros";
 import { LoadingSpinner } from "@/components/ui";
-import { useSheetContentHeight } from "@/hooks/useSheetContentHeight";
 import { NUTRIENT_COLORS } from "@/constants/colors";
 import { targetsAtom } from "@/atoms/targets";
 import { addEntryAndRefreshAtom } from "@/atoms/day";
@@ -38,7 +37,6 @@ export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [servingCount, setServingCount] = useState(1);
-    const sheetHeight = useSheetContentHeight();
 
     useEffect(() => {
         async function fetchProduct() {
@@ -102,7 +100,7 @@ export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center py-12" style={{ height: sheetHeight }}>
+            <div className="flex items-center justify-center py-12 h-full">
                 <LoadingSpinner show={true} />
             </div>
         );
@@ -110,7 +108,7 @@ export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
 
     if (error || !product) {
         return (
-            <div className="flex flex-col items-center justify-center text-foreground-secondary py-12" style={{ height: sheetHeight }}>
+            <div className="flex flex-col items-center justify-center text-foreground-secondary py-12 h-full">
                 <span className="text-4xl mb-2">😕</span>
                 <p>{error ?? "Product not found"}</p>
                 <Button
@@ -177,7 +175,7 @@ export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
     };
 
     return (
-        <div className="flex flex-col" style={{ height: sheetHeight }}>
+        <div className="flex flex-col h-full">
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto pb-4">
                 {/* Header with back button and product name */}

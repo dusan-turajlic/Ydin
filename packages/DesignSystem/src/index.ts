@@ -9,6 +9,8 @@ export { TabButton } from './components/tabButton';
 export { TabGroup } from './components/tabGroup';
 export { ModalSheet, ModalSheetPeek, ModalSheetBottomPeek, ModalSheetContent, ModalSheetHandle } from './components/modalSheet';
 export type { ModalSheetProps, ModalSheetPeekProps, ModalSheetBottomPeekProps, ModalSheetContentProps } from './components/modalSheet';
+export { FixedModalSheet, FixedModalSheetPeek, FixedModalSheetBottomPeek, FixedModalSheetContent, useFixedModalSheetContext } from './components/fixedModalSheet';
+export type { FixedModalSheetProps, FixedModalSheetPeekProps, FixedModalSheetBottomPeekProps, FixedModalSheetContentProps } from './components/fixedModalSheet';
 export { NutrientRow } from './components/nutrientRow';
 export { CollapsibleSection } from './components/collapsibleSection';
 export { MacroBadge } from './components/macroBadge';

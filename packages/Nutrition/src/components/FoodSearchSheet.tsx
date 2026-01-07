@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useNavigate } from "react-router-dom";
-import { ModalSheet, ModalSheetPeek, ModalSheetBottomPeek, ModalSheetContent, SearchInput, TabGroup, TabButton, Button } from "@ydin/design-system";
+import { FixedModalSheet, FixedModalSheetPeek, FixedModalSheetBottomPeek, FixedModalSheetContent, SearchInput, TabGroup, TabButton, Button } from "@ydin/design-system";
 import { Scan, ScanBarcode, Search, Clock, ChevronLeft, X, Plus, Minus } from "@ydin/design-system/icons";
 import SearchResults from "@/components/SearchResults";
 import Scanner from "@/components/Scanner";
@@ -79,7 +79,7 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
     const isViewingProduct = !!code;
 
     return (
-        <ModalSheet
+        <FixedModalSheet
             open={isExpanded}
             onOpenChange={(open) => {
                 setIsExpanded(open);
@@ -93,11 +93,12 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
                     }
                 }
             }}
+            snapPoints={[0.7, 0.9]}
             modal={false}
         >
             {/* Product detail action bar - only visible when viewing a product */}
             {isViewingProduct && (
-                <ModalSheetPeek visibleWhenCollapsed={false}>
+                <FixedModalSheetPeek visibleWhenCollapsed={false}>
                     <div className="flex items-center justify-between py-2">
                         <button
                             type="button"
@@ -116,10 +117,10 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
                             </Button>
                         </div>
                     </div>
-                </ModalSheetPeek>
+                </FixedModalSheetPeek>
             )}
 
-            <ModalSheetContent>
+            <FixedModalSheetContent>
                 {isExpanded && (
                     isViewingProduct ? (
                         <ProductDetail code={code} />
@@ -131,10 +132,10 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
                         />
                     )
                 )}
-            </ModalSheetContent>
+            </FixedModalSheetContent>
 
             {/* Bottom peek - always render to keep hasPersistentPeek stable */}
-            <ModalSheetBottomPeek>
+            <FixedModalSheetBottomPeek>
                 <div className="relative h-12">
                     {/* Search input - shown when on search tab and not viewing product */}
                     <div
@@ -206,7 +207,7 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
                         </div>
                     </div>
                 </div>
-            </ModalSheetBottomPeek>
-        </ModalSheet>
+            </FixedModalSheetBottomPeek>
+        </FixedModalSheet>
     );
 }

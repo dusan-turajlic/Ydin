@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Menu } from '@ydin/design-system/icons'
-import { ModalSheet, ModalSheetContent } from '@ydin/design-system'
+import { FixedModalSheet, FixedModalSheetContent } from '@ydin/design-system'
 
 const navigation = [
     { name: 'Copy day', href: '#' },
@@ -32,8 +32,8 @@ export default function TopNavigation() {
                 </div>
             </div>
 
-            <ModalSheet open={showMenu} onOpenChange={setShowMenu}>
-                <ModalSheetContent>
+            <FixedModalSheet open={showMenu} onOpenChange={setShowMenu} snapPoints={[0.35]}>
+                <FixedModalSheetContent>
                     <div className="space-y-1">
                         {navigation.map((item) => (
                             <button
@@ -45,8 +45,8 @@ export default function TopNavigation() {
                             </button>
                         ))}
                     </div>
-                </ModalSheetContent>
-            </ModalSheet>
+                </FixedModalSheetContent>
+            </FixedModalSheet>
         </div>
     )
 }

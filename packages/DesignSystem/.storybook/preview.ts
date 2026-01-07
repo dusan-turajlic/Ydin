@@ -19,17 +19,22 @@ const preview: Preview = {
     },
 
     backgrounds: {
-      default: 'dark',
-      values: [
-        { name: 'dark', value: '#201b12' },
-        { name: 'light', value: '#ffffff' },
-      ],
+      options: {
+        dark: { name: 'dark', value: '#201b12' },
+        light: { name: 'light', value: '#ffffff' }
+      }
     },
   },
 
   decorators: [
     (Story) => createElement('div', { className: 'dark' }, createElement(Story)),
   ],
+
+  initialGlobals: {
+    backgrounds: {
+      value: 'dark'
+    }
+  }
 };
 
 export default preview;
