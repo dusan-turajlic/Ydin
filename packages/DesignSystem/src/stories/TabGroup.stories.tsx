@@ -14,8 +14,8 @@ const meta = {
     tags: ['autodocs'],
     argTypes: {
         defaultTab: {
-            control: { type: 'number', min: 0, max: 4 },
-            description: 'Index of the initially active tab',
+            control: 'text',
+            description: 'ID or index of the initially active tab',
         },
     },
 } satisfies Meta<typeof TabGroup>;
@@ -28,19 +28,22 @@ export const Default: Story = {
     args: {
         tabs: [
             {
+                id: 'scan',
                 tab: <TabButton icon={<Scan className="h-4 w-4" />}>Scan</TabButton>,
                 content: <p className="text-foreground p-8">Scan mode: Use your camera to quickly scan food barcodes.</p>,
             },
             {
+                id: 'search',
                 tab: <TabButton icon={<Search className="h-4 w-4" />}>Search</TabButton>,
                 content: <p className="text-foreground p-8">Search mode: Find foods by typing their name.</p>,
             },
             {
+                id: 'history',
                 tab: <TabButton icon={<Plus className="h-4 w-4" />}>History</TabButton>,
                 content: <p className="text-foreground p-8">History: View your recently scanned or searched foods.</p>,
             },
         ],
-        defaultTab: 0,
+        defaultTab: 'scan',
     },
 };
 
@@ -229,14 +232,12 @@ export const RichContent: Story = {
 };
 
 // With onTabChange Callback
-const tabNames = ['Home', 'Search', 'Settings'];
-
 function OnTabChangeDemo() {
     const [history, setHistory] = useState<string[]>([]);
 
-    const handleTabChange = (index: number) => {
+    const handleTabChange = (id: string) => {
         const timestamp = new Date().toLocaleTimeString();
-        setHistory(prev => [`[${timestamp}] Switched to "${tabNames[index]}" (index: ${index})`, ...prev].slice(0, 5));
+        setHistory(prev => [`[${timestamp}] Switched to tab "${id}"`, ...prev].slice(0, 5));
     };
 
     return (
@@ -250,14 +251,17 @@ function OnTabChangeDemo() {
             <TabGroup
                 tabs={[
                     {
+                        id: 'home',
                         tab: <TabButton icon={<Home className="h-4 w-4" />}>Home</TabButton>,
                         content: <p className="text-foreground p-8">Welcome to the home tab.</p>,
                     },
                     {
+                        id: 'search',
                         tab: <TabButton icon={<Search className="h-4 w-4" />}>Search</TabButton>,
                         content: <p className="text-foreground p-8">Search for anything here.</p>,
                     },
                     {
+                        id: 'settings',
                         tab: <TabButton icon={<Settings className="h-4 w-4" />}>Settings</TabButton>,
                         content: <p className="text-foreground p-8">Adjust your preferences.</p>,
                     },

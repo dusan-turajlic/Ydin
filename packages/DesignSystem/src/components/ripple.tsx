@@ -62,11 +62,11 @@ export function Ripple({
       if (!container) return
 
       const rect = container.getBoundingClientRect()
-      
+
       // Get coordinates from mouse or touch event
       let clientX: number
       let clientY: number
-      
+
       if ("touches" in event && event.touches.length > 0) {
         clientX = event.touches[0].clientX
         clientY = event.touches[0].clientY
@@ -79,7 +79,7 @@ export function Ripple({
 
       const x = clientX - rect.left
       const y = clientY - rect.top
-      const id = Date.now()
+      const id = Date.now() + Math.random()
 
       setRipples((prev) => [...prev, { x, y, id }])
 
@@ -108,7 +108,7 @@ export function Ripple({
     },
   })
 
-  const roundedClass = typeof rounded === "boolean" 
+  const roundedClass = typeof rounded === "boolean"
     ? roundedClasses[rounded.toString() as "true" | "false"]
     : roundedClasses[rounded]
 
@@ -132,12 +132,12 @@ export function Ripple({
                 top: ripple.y,
                 backgroundColor: color,
               }}
-              initial={{ 
-                width: 0, 
-                height: 0, 
-                x: "-50%", 
-                y: "-50%", 
-                opacity: 0.6 
+              initial={{
+                width: 0,
+                height: 0,
+                x: "-50%",
+                y: "-50%",
+                opacity: 0.6
               }}
               animate={{
                 width: 400,
@@ -145,9 +145,9 @@ export function Ripple({
                 opacity: 0,
               }}
               exit={{ opacity: 0 }}
-              transition={{ 
-                duration: duration / 1000, 
-                ease: "easeOut" 
+              transition={{
+                duration: duration / 1000,
+                ease: "easeOut"
               }}
             />
           ))}

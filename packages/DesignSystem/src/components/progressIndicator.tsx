@@ -1,7 +1,7 @@
-import { 
-  ProgressBar, 
+import {
+  ProgressBar,
   Label,
-  type ProgressBarProps as AriaProgressBarProps 
+  type ProgressBarProps as AriaProgressBarProps
 } from "react-aria-components"
 import { cn } from "@/lib/utils"
 
@@ -38,8 +38,6 @@ export function ProgressIndicator({
   label,
   ...props
 }: Readonly<ProgressIndicatorProps>) {
-  // Calculate progress percentage (0-100)
-  const percentage = Math.min(Math.max((value / max) * 100, 0), 100)
   const displayText = `${value} / ${max}`
   const showText = size === "xl" || size === "lg"
 
@@ -58,12 +56,12 @@ export function ProgressIndicator({
           className,
         )}
       >
-        {({ percentage: pct }) => (
+        {({ percentage }) => (
           <>
             {label && <Label className="sr-only">{label}</Label>}
             <div
               className={cn("absolute inset-y-0 left-0 transition-all duration-300 ease-out rounded-full", color)}
-              style={{ width: `${pct}%` }}
+              style={{ width: `${percentage}%` }}
             />
           </>
         )}
@@ -87,12 +85,12 @@ export function ProgressIndicator({
           className,
         )}
       >
-        {({ percentage: pct }) => (
+        {({ percentage }) => (
           <>
             {label && <Label className="sr-only">{label}</Label>}
             <div
               className={cn("absolute inset-y-0 left-0 transition-all duration-300 ease-out rounded-full", color)}
-              style={{ width: `${pct}%` }}
+              style={{ width: `${percentage}%` }}
             />
           </>
         )}
@@ -115,12 +113,12 @@ export function ProgressIndicator({
         className,
       )}
     >
-      {({ percentage: pct }) => (
+      {({ percentage }) => (
         <>
           {label && <Label className="sr-only">{label}</Label>}
           <div
             className={cn("absolute inset-y-0 left-0 transition-all duration-300 ease-out rounded-full", color)}
-            style={{ width: `${pct}%` }}
+            style={{ width: `${percentage}%` }}
           />
 
           {showText && (
@@ -138,7 +136,7 @@ export function ProgressIndicator({
               {/* Text on filled portion */}
               <div
                 className="absolute inset-0 flex items-center justify-center overflow-hidden"
-                style={{ clipPath: `inset(0 ${100 - percentage}% 0 0)` }}
+                style={{ clipPath: `inset(0 ${100 - (percentage ?? 0)}% 0 0)` }}
               >
                 <span className={cn("font-medium text-background whitespace-nowrap", size === "xl" ? "text-base" : "text-sm")}>
                   {displayText}

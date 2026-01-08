@@ -10,8 +10,8 @@ import { ProductActionBar } from "@/components/ProductActionBar";
 import { sheetExpandedAtom } from "@/atoms/sheet";
 import { logHourAtom } from "@/atoms/time";
 
-const SCAN_TAB_INDEX = 0;
-const SEARCH_TAB_INDEX = 1;
+const SCAN_TAB_ID = "scan";
+const SEARCH_TAB_ID = "search";
 
 interface FoodSearchSheetProps {
     code?: string;
@@ -20,7 +20,7 @@ interface FoodSearchSheetProps {
 export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>) {
     const navigate = useNavigate();
     const [isExpanded, setIsExpanded] = useAtom(sheetExpandedAtom);
-    const [activeTab, setActiveTab] = useState(SEARCH_TAB_INDEX);
+    const [activeTab, setActiveTab] = useState(SEARCH_TAB_ID);
     const [searchQuery, setSearchQuery] = useState("");
     const logHour = useAtomValue(logHourAtom);
     const setLogHour = useSetAtom(logHourAtom);
@@ -35,7 +35,7 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
 
     // Auto-focus search input when sheet expands and search tab is active
     useEffect(() => {
-        if (isExpanded && activeTab === SEARCH_TAB_INDEX && !code) {
+        if (isExpanded && activeTab === SEARCH_TAB_ID && !code) {
             // Small delay to ensure the DOM is ready after animation
             const timeoutId = setTimeout(() => {
                 searchInputRef.current?.focus();
@@ -44,8 +44,8 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
         }
     }, [isExpanded, activeTab, code]);
 
-    const handleTabChange = (index: number) => {
-        setActiveTab(index);
+    const handleTabChange = (id: string) => {
+        setActiveTab(id);
     };
 
     const handleCloseProductDetail = () => {
@@ -58,16 +58,16 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
 
     const tabs = [
         {
-            index: SCAN_TAB_INDEX,
+            id: SCAN_TAB_ID,
             tab: <TabButton icon={<Scan className="h-4 w-4" />}>Scan</TabButton>,
             content: <Scanner />,
         },
         {
-            index: SEARCH_TAB_INDEX,
+            id: SEARCH_TAB_ID,
             tab: <TabButton icon={<Search className="h-4 w-4" />}>Search</TabButton>,
             content: <SearchResults query={searchQuery} />,
         },
-    ].sort((a, b) => a.index - b.index);
+    ];
 
     // Viewing product details
     const isViewingProduct = !!code;
@@ -78,7 +78,7 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
             onOpenChange={(open) => {
                 setIsExpanded(open);
                 if (!open) {
-                    setActiveTab(SEARCH_TAB_INDEX);
+                    setActiveTab(SEARCH_TAB_ID);
                     // Clear selected hour when closing
                     setLogHour(null);
                     // Navigate back if closing product detail
@@ -133,7 +133,7 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
                 <div className={`relative ${isViewingProduct ? 'h-20' : 'h-12'}`}>
                     {/* Search input - shown when on search tab and not viewing product */}
                     <div
-                        className={`absolute inset-0 ${activeTab === SEARCH_TAB_INDEX && !isViewingProduct
+                        className={`absolute inset-0 ${activeTab === SEARCH_TAB_ID && !isViewingProduct
                             ? 'w-full'
                             : 'w-0 pointer-events-none -z-50 overflow-hidden'
                             }`}
@@ -146,7 +146,7 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
                             action={!isExpanded && (
                                 <Button
                                     onPress={() => {
-                                        setActiveTab(SCAN_TAB_INDEX);
+                                        setActiveTab(SCAN_TAB_ID);
                                         setIsExpanded(true);
                                     }}
                                     variant="icon"
