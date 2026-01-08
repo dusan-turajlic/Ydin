@@ -6,7 +6,6 @@ import { formatProductName } from "@/utils/format";
 import { calculateCaloriesFromMacros } from "@/utils/macros";
 import { LoadingSpinner } from "@/components/ui";
 import { Search, SearchX } from "@ydin/design-system/icons";
-import { useSheetContentHeight } from "@/hooks/useSheetContentHeight";
 import { Link } from "react-router-dom";
 
 interface SearchResultsProps {
@@ -20,7 +19,7 @@ export default function SearchResults({ query }: Readonly<SearchResultsProps>) {
     const [results, setResults] = useState<IOpenFoodDexObject[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
-    const sheetHeight = useSheetContentHeight();
+
     useEffect(() => {
         // Clear previous timeout
         if (debounceRef.current) {
@@ -68,7 +67,7 @@ export default function SearchResults({ query }: Readonly<SearchResultsProps>) {
     // Empty state when no query
     if (!query.trim()) {
         return (
-            <div className="flex flex-col items-center justify-center text-foreground-secondary py-12" style={{ height: sheetHeight }}>
+            <div className="flex flex-col items-center justify-center text-foreground-secondary py-12 h-full">
                 <span className="text-4xl mb-2"><Search className="h-8 w-8" /></span>
                 <p>Start typing to search for foods</p>
             </div>
@@ -78,7 +77,7 @@ export default function SearchResults({ query }: Readonly<SearchResultsProps>) {
     // Loading state
     if (isSearching && results.length === 0) {
         return (
-            <div className="flex items-center justify-center py-12" style={{ height: sheetHeight }}>
+            <div className="flex items-center justify-center py-12 h-full">
                 <LoadingSpinner show={true} />
             </div>
         );
@@ -87,7 +86,7 @@ export default function SearchResults({ query }: Readonly<SearchResultsProps>) {
     // No results state
     if (!isSearching && results.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center text-foreground-secondary py-12" style={{ height: sheetHeight }}>
+            <div className="flex flex-col items-center justify-center text-foreground-secondary py-12 h-full">
                 <span className="text-4xl mb-2"><SearchX className="h-8 w-8" /></span>
                 <p>No results found for "{query}"</p>
             </div>
@@ -95,7 +94,7 @@ export default function SearchResults({ query }: Readonly<SearchResultsProps>) {
     }
 
     return (
-        <div className="overflow-y-auto" style={{ height: sheetHeight }}>
+        <div className="overflow-y-auto h-full">
             <div className="flex flex-col gap-2">
                 {results.map((item) => {
                     const calories = item.kcal ?? calculateCaloriesFromMacros({

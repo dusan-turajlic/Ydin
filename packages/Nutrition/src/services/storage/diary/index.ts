@@ -6,7 +6,7 @@ export const DB_NAME = "NUTRITION_DIARY_DB";
 export const DB_VERSION = 1;
 
 // Use IndexedDB for diary - simpler and avoids WASM conflicts with OpenFoodDex SQLite
-const provider = createProvider("indexDB", DB_NAME, DB_VERSION);
+const provider = createProvider("sqlite", DB_NAME, DB_VERSION);
 
 // Base path for all diary entries
 const BASE_PATH = "/nutrition/log";
