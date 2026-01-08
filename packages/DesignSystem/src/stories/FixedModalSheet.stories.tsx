@@ -300,10 +300,10 @@ export const BothPeeksVisible: Story = {
                     {/* Bottom peek - quick actions */}
                     <FixedModalSheetBottomPeek>
                         <div className="flex gap-2">
-                            <Button variant="secondary" className="flex-1" onClick={() => setExpanded(true)}>
+                            <Button variant="secondary" className="flex-1" onPress={() => setExpanded(true)}>
                                 Mark all read
                             </Button>
-                            <Button variant="default" className="flex-1" onClick={() => setExpanded(true)}>
+                            <Button variant="default" className="flex-1" onPress={() => setExpanded(true)}>
                                 View details
                             </Button>
                         </div>
@@ -336,7 +336,7 @@ export const NoPeekWhenCollapsed: Story = {
                     <p className="text-muted-foreground">
                         Add a custom food item that's not in the database.
                     </p>
-                    <Button onClick={() => setShowSheet(true)} className="w-full">
+                    <Button onPress={() => setShowSheet(true)} className="w-full">
                         Add Custom Food
                     </Button>
                     <div className="space-y-3 pt-4">
@@ -360,7 +360,7 @@ export const NoPeekWhenCollapsed: Story = {
                         <FixedModalSheetPeek visibleWhenCollapsed={false}>
                             <div className="flex items-center justify-between py-2">
                                 <h3 className="text-lg font-bold text-foreground">Add Custom Food</h3>
-                                <Button variant="icon" size="icon-sm" onClick={() => setShowSheet(false)}>
+                                <Button variant="icon" size="icon-sm" onPress={() => setShowSheet(false)}>
                                     <LogOut className="h-4 w-4" />
                                 </Button>
                             </div>
@@ -385,10 +385,10 @@ export const NoPeekWhenCollapsed: Story = {
                         {/* Footer actions */}
                         <FixedModalSheetBottomPeek visibleWhenCollapsed={false}>
                             <div className="flex gap-2">
-                                <Button variant="secondary" className="flex-1" onClick={() => setShowSheet(false)}>
+                                <Button variant="secondary" className="flex-1" onPress={() => setShowSheet(false)}>
                                     Cancel
                                 </Button>
-                                <Button variant="default" className="flex-1" onClick={() => setShowSheet(false)}>
+                                <Button variant="default" className="flex-1" onPress={() => setShowSheet(false)}>
                                     Save Food
                                 </Button>
                             </div>
@@ -422,7 +422,7 @@ export const SnapPointControls: Story = {
                         <Button
                             variant="secondary"
                             className="flex-1"
-                            onClick={() => currentSnapPoint > 0 ? snapTo(currentSnapPoint - 1) : collapse()}
+                            onPress={() => currentSnapPoint > 0 ? snapTo(currentSnapPoint - 1) : collapse()}
                         >
                             <ChevronDown className="h-4 w-4 mr-2" />
                             Down
@@ -430,8 +430,8 @@ export const SnapPointControls: Story = {
                         <Button
                             variant="secondary"
                             className="flex-1"
-                            onClick={() => isExpanded ? snapTo(currentSnapPoint + 1) : expand()}
-                            disabled={isExpanded && currentSnapPoint === 2}
+                            onPress={() => isExpanded ? snapTo(currentSnapPoint + 1) : expand()}
+                            isDisabled={isExpanded && currentSnapPoint === 2}
                         >
                             <ChevronUp className="h-4 w-4 mr-2" />
                             Up
@@ -478,7 +478,7 @@ export const SnapPointControls: Story = {
                     </FixedModalSheetContent>
 
                     <FixedModalSheetBottomPeek>
-                        <Button className="w-full" onClick={() => setIsOpen(false)}>
+                        <Button className="w-full" onPress={() => setIsOpen(false)}>
                             Close
                         </Button>
                     </FixedModalSheetBottomPeek>

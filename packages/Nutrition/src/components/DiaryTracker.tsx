@@ -37,7 +37,7 @@ function DiaryTracker() {
                                         <Button
                                             variant="icon"
                                             size="icon-xs"
-                                            onClick={() => {
+                                            onPress={() => {
                                                 setLogHour(hour);
                                                 setIsExpanded(true);
                                             }}

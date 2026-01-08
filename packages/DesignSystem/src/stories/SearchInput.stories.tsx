@@ -38,7 +38,7 @@ const meta = {
             control: 'text',
             description: 'Placeholder text',
         },
-        disabled: {
+        isDisabled: {
             control: 'boolean',
             description: 'Disabled state',
         },
@@ -132,7 +132,7 @@ export const Placeholders: Story = {
 export const Disabled: Story = {
     args: {
         placeholder: 'Search disabled',
-        disabled: true,
+        isDisabled: true,
     },
     decorators: [
         (Story) => (

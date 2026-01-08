@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils"
+import { cn, formatDisplayValue, calculatePercentage } from "@/lib/utils"
 import { ProgressIndicator } from "./progressIndicator"
 
 interface NutrientRowProps {
@@ -25,9 +25,9 @@ export function NutrientRow({
     className,
 }: Readonly<NutrientRowProps>) {
     const hasTarget = target !== undefined && target > 0
-    const percentage = hasTarget ? Math.round((value / target) * 100) : 0
-    const displayValue = value % 1 === 0 ? value : value.toFixed(1)
-    const displayTarget = target !== undefined ? (target % 1 === 0 ? target : target.toFixed(1)) : null
+    const percentage = hasTarget ? calculatePercentage(value, target) : 0
+    const displayValue = formatDisplayValue(value)
+    const displayTarget = target !== undefined ? formatDisplayValue(target) : null
 
     return (
         <div className={cn("flex flex-col gap-1 py-2", className)}>

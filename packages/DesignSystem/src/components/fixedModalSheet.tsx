@@ -28,8 +28,8 @@ function useFixedModalSheetContext() {
   return context
 }
 
-// Utility to convert snap point to pixels
-function snapPointToPixels(snapPoint: number | string, windowHeight: number): number {
+/** Utility to convert snap point to pixels */
+export function snapPointToPixels(snapPoint: number | string, windowHeight: number): number {
   if (typeof snapPoint === "number") {
     if (snapPoint > 0 && snapPoint <= 1) {
       return windowHeight * snapPoint

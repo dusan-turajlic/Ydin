@@ -22,7 +22,7 @@ const meta = {
             options: ['xl', 'lg', 'default', 'sm', 'xs', 'icon', 'icon-xs', 'icon-sm', 'icon-lg'],
             description: 'Size variant',
         },
-        disabled: {
+        isDisabled: {
             control: 'boolean',
             description: 'Disabled state',
         },
@@ -31,7 +31,7 @@ const meta = {
         children: 'Button',
         variant: 'default',
         size: 'default',
-        onClick: fn(),
+        onPress: fn(),
     },
 } satisfies Meta<typeof Button>;
 
@@ -257,6 +257,6 @@ export const ExtraSmall: Story = {
 export const Disabled: Story = {
     args: {
         children: 'Disabled',
-        disabled: true,
+        isDisabled: true,
     },
 };

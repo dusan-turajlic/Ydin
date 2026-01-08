@@ -39,7 +39,7 @@ function ProductDetailContent({ code }: Readonly<ProductDetailProps>) {
                 <Button
                     variant="outline"
                     className="mt-4"
-                    onClick={() => navigate("/food")}
+                    onPress={() => navigate("/food")}
                 >
                     Go back
                 </Button>
