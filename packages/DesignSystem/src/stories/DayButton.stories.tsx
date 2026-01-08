@@ -33,7 +33,7 @@ const meta = {
         date: 26,
         active: false,
         progress: 0,
-        onClick: fn(),
+        onPress: fn(),
     },
 } satisfies Meta<typeof DayButton>;
 

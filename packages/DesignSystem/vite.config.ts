@@ -44,6 +44,10 @@ export default defineConfig({
         'class-variance-authority',
         'clsx',
         'tailwind-merge',
+        'react-aria-components',
+        /^@react-aria\//,
+        /^@react-stately\//,
+        /^@internationalized\//,
       ],
       output: {
         globals: {

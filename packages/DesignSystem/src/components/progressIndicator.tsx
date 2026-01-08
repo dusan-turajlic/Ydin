@@ -1,13 +1,25 @@
-import type * as React from "react"
+import { 
+  ProgressBar, 
+  Label,
+  type ProgressBarProps as AriaProgressBarProps 
+} from "react-aria-components"
 import { cn } from "@/lib/utils"
 
 type ProgressSize = "xl" | "lg" | "md" | "sm"
 
-interface ProgressIndicatorProps extends React.HTMLAttributes<HTMLDivElement> {
-  value: number // Current value (e.g., 1918)
-  max: number // Maximum value (e.g., 2400)
+interface ProgressIndicatorProps extends Omit<AriaProgressBarProps, "value" | "className" | "children"> {
+  /** Current value */
+  value: number
+  /** Maximum value (minValue is always 0) */
+  max: number
+  /** Size variant */
   size?: ProgressSize
-  color?: string // Custom background color class (e.g., "bg-red-500"), defaults to "bg-gold"
+  /** Custom background color class (e.g., "bg-red-500"), defaults to "bg-gold" */
+  color?: string
+  /** Additional CSS classes */
+  className?: string
+  /** Optional label for accessibility (visually hidden by default) */
+  label?: string
 }
 
 const sizeStyles = {
@@ -23,95 +35,124 @@ export function ProgressIndicator({
   size = "lg",
   color = "bg-gold",
   className,
+  label,
   ...props
 }: Readonly<ProgressIndicatorProps>) {
   // Calculate progress percentage (0-100)
   const percentage = Math.min(Math.max((value / max) * 100, 0), 100)
-
   const displayText = `${value} / ${max}`
   const showText = size === "xl" || size === "lg"
 
   // Small variant - simple thin bar
   if (size === "sm") {
     return (
-      <div
+      <ProgressBar
+        {...props}
+        value={value}
+        minValue={0}
+        maxValue={max}
+        aria-label={label ?? `Progress: ${value} of ${max}`}
         className={cn(
           "relative rounded-full overflow-hidden bg-surface border border-border",
           sizeStyles.sm,
           className,
         )}
-        {...props}
       >
-        <div
-          className={cn("absolute inset-y-0 left-0 transition-all duration-300 ease-out rounded-full", color)}
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
+        {({ percentage: pct }) => (
+          <>
+            {label && <Label className="sr-only">{label}</Label>}
+            <div
+              className={cn("absolute inset-y-0 left-0 transition-all duration-300 ease-out rounded-full", color)}
+              style={{ width: `${pct}%` }}
+            />
+          </>
+        )}
+      </ProgressBar>
     )
   }
 
   // Medium variant - pill without text
   if (size === "md") {
     return (
-      <div
+      <ProgressBar
+        {...props}
+        value={value}
+        minValue={0}
+        maxValue={max}
+        aria-label={label ?? `Progress: ${value} of ${max}`}
         className={cn(
           "relative inline-flex items-center justify-center rounded-full overflow-hidden",
           "bg-surface border border-border",
           sizeStyles.md,
           className,
         )}
-        {...props}
       >
-        <div
-          className={cn("absolute inset-y-0 left-0 transition-all duration-300 ease-out rounded-full", color)}
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
+        {({ percentage: pct }) => (
+          <>
+            {label && <Label className="sr-only">{label}</Label>}
+            <div
+              className={cn("absolute inset-y-0 left-0 transition-all duration-300 ease-out rounded-full", color)}
+              style={{ width: `${pct}%` }}
+            />
+          </>
+        )}
+      </ProgressBar>
     )
   }
 
   // XL and LG variants - pill with text
   return (
-    <div
+    <ProgressBar
+      {...props}
+      value={value}
+      minValue={0}
+      maxValue={max}
+      aria-label={label ?? `Progress: ${value} of ${max}`}
       className={cn(
         "relative inline-flex items-center justify-center rounded-full overflow-hidden",
         "bg-surface border border-border",
         sizeStyles[size],
         className,
       )}
-      {...props}
     >
-      <div
-        className={cn("absolute inset-y-0 left-0 transition-all duration-300 ease-out rounded-full", color)}
-        style={{ width: `${percentage}%` }}
-      />
-
-      {showText && (
+      {({ percentage: pct }) => (
         <>
+          {label && <Label className="sr-only">{label}</Label>}
           <div
-            className="absolute inset-0 flex items-center justify-center overflow-hidden"
-            style={{ clipPath: `inset(0 0 0 ${percentage}%)` }}
-          >
-            <span className={cn("font-medium text-foreground-secondary whitespace-nowrap", size === "xl" ? "text-base" : "text-sm")}>
-              {displayText}
-            </span>
-          </div>
+            className={cn("absolute inset-y-0 left-0 transition-all duration-300 ease-out rounded-full", color)}
+            style={{ width: `${pct}%` }}
+          />
 
-          <div
-            className="absolute inset-0 flex items-center justify-center overflow-hidden"
-            style={{ clipPath: `inset(0 ${100 - percentage}% 0 0)` }}
-          >
-            <span className={cn("font-medium text-background whitespace-nowrap", size === "xl" ? "text-base" : "text-sm")}>
-              {displayText}
-            </span>
-          </div>
+          {showText && (
+            <>
+              {/* Text on unfilled portion */}
+              <div
+                className="absolute inset-0 flex items-center justify-center overflow-hidden"
+                style={{ clipPath: `inset(0 0 0 ${percentage}%)` }}
+              >
+                <span className={cn("font-medium text-foreground-secondary whitespace-nowrap", size === "xl" ? "text-base" : "text-sm")}>
+                  {displayText}
+                </span>
+              </div>
 
-          {/* Invisible text for proper sizing */}
-          <span className={cn("font-medium opacity-0 whitespace-nowrap", size === "xl" ? "text-base" : "text-sm")}>
-            {displayText}
-          </span>
+              {/* Text on filled portion */}
+              <div
+                className="absolute inset-0 flex items-center justify-center overflow-hidden"
+                style={{ clipPath: `inset(0 ${100 - percentage}% 0 0)` }}
+              >
+                <span className={cn("font-medium text-background whitespace-nowrap", size === "xl" ? "text-base" : "text-sm")}>
+                  {displayText}
+                </span>
+              </div>
+
+              {/* Invisible text for proper sizing */}
+              <span className={cn("font-medium opacity-0 whitespace-nowrap", size === "xl" ? "text-base" : "text-sm")}>
+                {displayText}
+              </span>
+            </>
+          )}
         </>
       )}
-    </div>
+    </ProgressBar>
   )
 }

@@ -39,9 +39,7 @@ export function ProductActionBar({ code }: Readonly<ProductActionBarProps>) {
         }
     }, [product, productServingSize, setServingSize]);
 
-    const handleServingSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-
+    const handleServingSizeChange = (value: string) => {
         // Allow empty input - treat as 0
         if (value === "" || value === undefined) {
             setServingSize(0);
@@ -91,7 +89,7 @@ export function ProductActionBar({ code }: Readonly<ProductActionBarProps>) {
             <div className="flex items-center gap-2">
                 <Input
                     type="number"
-                    value={servingSize || ""}
+                    value={String(servingSize || "")}
                     onChange={handleServingSizeChange}
                     endAdornment={
                         <div className="text-foreground-secondary px-2">
@@ -101,7 +99,7 @@ export function ProductActionBar({ code }: Readonly<ProductActionBarProps>) {
                 />
 
                 {/* Log Food Button */}
-                <Button onClick={handleLogFood}>
+                <Button onPress={handleLogFood}>
                     Log Food
                 </Button>
             </div>
@@ -120,7 +118,7 @@ export function ProductActionBar({ code }: Readonly<ProductActionBarProps>) {
                 <Button
                     size="xs"
                     variant={servingSize === 100 ? "default" : "secondary"}
-                    onClick={() => setServingSize(100)}
+                    onPress={() => setServingSize(100)}
                 >
                     100g
                 </Button>
@@ -130,7 +128,7 @@ export function ProductActionBar({ code }: Readonly<ProductActionBarProps>) {
                     <Button
                         size="xs"
                         variant={servingSize === productServingSize ? "default" : "secondary"}
-                        onClick={() => setServingSize(productServingSize)}
+                        onPress={() => setServingSize(productServingSize)}
                     >
                         serving
                     </Button>

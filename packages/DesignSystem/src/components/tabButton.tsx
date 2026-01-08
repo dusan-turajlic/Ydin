@@ -1,35 +1,42 @@
 import type * as React from "react"
 import { cn } from "@/lib/utils"
-import { useRipple } from "@/components/rippleEffect"
 
-interface TabButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  active?: boolean
+interface TabButtonProps {
+  /** Icon to display before the text */
   icon?: React.ReactNode
-  buttonRef?: (element: HTMLButtonElement | null) => void
+  /** Tab label text */
+  children?: React.ReactNode
+  /** Additional class name */
+  className?: string
+  /** 
+   * @deprecated Active state is now controlled by TabGroup. This prop is kept for backward compatibility.
+   */
+  active?: boolean
 }
 
-export function TabButton({ children, active = false, icon, className, onClick, buttonRef, ...props }: Readonly<TabButtonProps>) {
-  const { addRipple, RippleContainer } = useRipple("rgba(255, 255, 255, 0.3)", 600, false)
-
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    addRipple(e)
-    onClick?.(e)
-  }
-
+/**
+ * Content component for tab triggers.
+ * Used inside TabGroup to render the tab label with optional icon.
+ * 
+ * @example
+ * ```tsx
+ * <TabGroup
+ *   tabs={[
+ *     { tab: <TabButton icon={<Home />}>Home</TabButton>, content: <HomePanel /> },
+ *     { tab: <TabButton icon={<Settings />}>Settings</TabButton>, content: <SettingsPanel /> },
+ *   ]}
+ * />
+ * ```
+ */
+export function TabButton({ 
+  children, 
+  icon, 
+  className,
+}: Readonly<TabButtonProps>) {
   return (
-    <button
-      className={cn(
-        "inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold relative overflow-hidden",
-        active ? "text-white" : "text-foreground-secondary hover:text-white",
-        className,
-      )}
-      onClick={handleClick}
-      ref={buttonRef}
-      {...props}
-    >
-      <RippleContainer />
+    <span className={cn("inline-flex items-center gap-2", className)}>
       {icon && <span className="text-base">{icon}</span>}
       {children}
-    </button>
+    </span>
   )
 }

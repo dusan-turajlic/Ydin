@@ -106,7 +106,7 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
                                 <Clock className="h-4 w-4 text-foreground-secondary" />
                                 <span className="text-sm text-foreground">{displayTime}</span>
                             </div>
-                            <Button variant="secondary" size="icon-sm" onClick={handleCloseProductDetail}>
+                            <Button variant="secondary" size="icon-sm" onPress={handleCloseProductDetail}>
                                 <X className="h-4 w-4" />
                             </Button>
                         </div>
@@ -145,7 +145,7 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
                             onSearch={setSearchQuery}
                             action={!isExpanded && (
                                 <Button
-                                    onClick={() => {
+                                    onPress={() => {
                                         setActiveTab(SCAN_TAB_INDEX);
                                         setIsExpanded(true);
                                     }}

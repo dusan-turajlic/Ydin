@@ -91,7 +91,7 @@ function WeekDaySelector() {
                                         day={dayLabel.toUpperCase()}
                                         date={dateNum}
                                         active={dayUUID === selectedDayUUID}
-                                        onClick={() => setSelectedDay(coreDate)}
+                                        onPress={() => setSelectedDay(coreDate)}
                                     />
                                 );
                             })}
