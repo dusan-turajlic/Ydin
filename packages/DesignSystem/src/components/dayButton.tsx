@@ -1,5 +1,5 @@
 import { Button as AriaButton, type ButtonProps as AriaButtonProps } from "react-aria-components"
-import { cn } from "@/lib/utils"
+import { cn, clamp } from "@/lib/utils"
 import { Ripple } from "./ripple"
 import { ProgressRing } from "./progressRing"
 
@@ -24,7 +24,7 @@ export function DayButton({
   className, 
   ...props 
 }: Readonly<DayButtonProps>) {
-  const cappedProgress = Math.min(Math.max(progress, 0), 100)
+  const cappedProgress = clamp(progress, 0, 100)
   const rippleColor = active ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.3)"
 
   // Size for the progress ring (slightly larger than button)

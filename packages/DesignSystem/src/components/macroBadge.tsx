@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils"
+import { cn, formatDisplayValue } from "@/lib/utils"
 
 interface MacroBadgeProps {
     /** The numeric value to display */
@@ -20,7 +20,7 @@ export function MacroBadge({
     unit,
     className,
 }: Readonly<MacroBadgeProps>) {
-    const displayValue = value % 1 === 0 ? value : value.toFixed(1)
+    const displayValue = formatDisplayValue(value)
 
     return (
         <div className={cn("flex flex-col items-center gap-0.5", className)}>

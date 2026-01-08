@@ -1,5 +1,5 @@
 import type * as React from "react"
-import { cn } from "@/lib/utils"
+import { cn, clamp } from "@/lib/utils"
 
 interface ProgressRingProps extends React.HTMLAttributes<HTMLDivElement> {
     /** Progress value from 0 to 100 */
@@ -45,7 +45,7 @@ export function ProgressRing({
     ...props
 }: Readonly<ProgressRingProps>) {
     // Clamp value between 0 and 100
-    const clampedValue = Math.min(Math.max(value, 0), 100)
+    const clampedValue = clamp(value, 0, 100)
 
     // Calculate SVG properties
     const radius = (size - strokeWidth) / 2
