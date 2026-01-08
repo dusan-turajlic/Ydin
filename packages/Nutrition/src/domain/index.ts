@@ -6,3 +6,7 @@ export { Day } from './Day';
 export { Week } from './Week';
 export { Time } from './Time';
 
+// Domain layer - Serving calculations
+export { Serving } from './Serving';
+export type { ScaledMacros } from './Serving';
+

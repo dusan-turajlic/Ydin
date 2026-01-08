@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { Suspense } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useAtomValue } from "jotai";
 import {
     ProgressIndicator,
     MacroBadge,
@@ -8,109 +8,34 @@ import {
     NutrientRow,
     Button,
 } from "@ydin/design-system";
-import { getByBarcode } from "@/services/api/openFoodDex";
-import type { Product } from "@/modals";
-import { extractMacros, calculateCaloriesFromMacros, calculatePercentageOfTarget } from "@/utils/macros";
 import { LoadingSpinner } from "@/components/ui";
 import { NUTRIENT_COLORS } from "@/constants/colors";
 import { targetsAtom } from "@/atoms/targets";
-import { addEntryAndRefreshAtom } from "@/atoms/day";
-import { logHourAtom } from "@/atoms/time";
-import { sheetExpandedAtom } from "@/atoms/sheet";
-import { productActionAtom, logFoodCallbackAtom, incrementServingAtom, decrementServingAtom } from "@/atoms/productAction";
+import { productAtomFamily, servingSizeAtom } from "@/atoms/selectedFood";
+import { Serving } from "@/domain";
+import { calculatePercentageOfTarget } from "@/utils/macros";
 
 interface ProductDetailProps {
     code: string;
 }
 
-export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
+/**
+ * Inner component that displays product details.
+ * Wrapped in Suspense to handle async atom loading.
+ */
+function ProductDetailContent({ code }: Readonly<ProductDetailProps>) {
     const navigate = useNavigate();
     const targets = useAtomValue(targetsAtom);
-    const addEntry = useSetAtom(addEntryAndRefreshAtom);
-    const [logHour, setLogHour] = useAtom(logHourAtom);
-    const setIsExpanded = useSetAtom(sheetExpandedAtom);
-    const setProductAction = useSetAtom(productActionAtom);
-    const setLogFoodCallback = useSetAtom(logFoodCallbackAtom);
-    const setIncrementServing = useSetAtom(incrementServingAtom);
-    const setDecrementServing = useSetAtom(decrementServingAtom);
-    const [product, setProduct] = useState<Product | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [servingCount, setServingCount] = useState(1);
+    const product = useAtomValue(productAtomFamily(code));
 
-    useEffect(() => {
-        async function fetchProduct() {
-            setIsLoading(true);
-            setError(null);
-            try {
-                const data = await getByBarcode(code);
-                setProduct(data);
-            } catch (err) {
-                setError("Failed to load product");
-                console.error(err);
-            } finally {
-                setIsLoading(false);
-            }
-        }
+    // Read serving size from shared atom (updated by ProductActionBar)
+    const servingSize = useAtomValue(servingSizeAtom);
 
-        fetchProduct();
-    }, [code]);
-
-    // Increment/decrement callbacks for action bar
-    const incrementServing = useCallback(() => {
-        setServingCount(c => c + 1);
-    }, []);
-
-    const decrementServing = useCallback(() => {
-        setServingCount(c => Math.max(1, c - 1));
-    }, []);
-
-    // Calculate derived values (only when product is loaded)
-    const servingSize = product?.macros?.serving_size ?? 100;
-    const servingUnit = product?.macros?.serving_unit ?? "g";
-    const totalServing = Math.round(servingSize * servingCount);
-
-    // Ref to hold the log food handler (updated when product/macros change)
-    const handleLogFoodRef = useRef<(() => Promise<void>) | null>(null);
-
-    // Update action bar atoms
-    useEffect(() => {
-        if (product) {
-            setProductAction({
-                productName: product.product_name?.toLowerCase() ?? "serving",
-                servingCount,
-                totalServing,
-                servingUnit,
-                canDecrement: servingCount > 1,
-            });
-            setIncrementServing(() => incrementServing);
-            setDecrementServing(() => decrementServing);
-            // Set callback that calls the ref (ref will be updated below after macros are computed)
-            setLogFoodCallback(() => async () => { await handleLogFoodRef.current?.(); });
-        }
-
-        // Clear atoms on unmount
-        return () => {
-            setProductAction(null);
-            setLogFoodCallback(null);
-            setIncrementServing(null);
-            setDecrementServing(null);
-        };
-    }, [product, servingCount, totalServing, servingUnit, incrementServing, decrementServing, setProductAction, setLogFoodCallback, setIncrementServing, setDecrementServing]);
-
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center py-12 h-full">
-                <LoadingSpinner show={true} />
-            </div>
-        );
-    }
-
-    if (error || !product) {
+    if (!product) {
         return (
             <div className="flex flex-col items-center justify-center text-foreground-secondary py-12 h-full">
                 <span className="text-4xl mb-2">😕</span>
-                <p>{error ?? "Product not found"}</p>
+                <p>Product not found</p>
                 <Button
                     variant="outline"
                     className="mt-4"
@@ -122,63 +47,18 @@ export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
         );
     }
 
-    // Extract macros from product (default to 0 if missing)
-    const rawMacros = extractMacros(product.macros?.per100g);
-    const multiplier = (servingSize / 100) * servingCount;
-
-    // Calculate values based on serving
-    const getValue = (value: number) => value * multiplier;
-
-    const macros = {
-        calories: getValue(rawMacros.calories || calculateCaloriesFromMacros({
-            protein: rawMacros.protein,
-            fat: rawMacros.fat,
-            carbs: rawMacros.carbs,
-        })),
-        protein: getValue(rawMacros.protein),
-        fat: getValue(rawMacros.fat),
-        carbs: getValue(rawMacros.carbs),
-        fiber: getValue(rawMacros.fiber),
-        sugars: getValue(rawMacros.sugars),
-    };
+    // Calculate macros based on current serving size from action bar
+    const macros = Serving.scaleMacros(product.macros?.per100g, servingSize);
 
     // Calculate percentages of daily targets
     const getPercentage = (value: number, target: number) =>
         calculatePercentageOfTarget(value, target);
 
-    // Update the handleLogFood ref with the current function (no useEffect needed, just update the ref)
-    handleLogFoodRef.current = async () => {
-        const entryData = {
-            code: product.code,
-            name: product.product_name ?? "Unknown",
-            servingCount,
-            servingSize,
-            unit: servingUnit,
-            macros: {
-                calories: macros.calories,
-                protein: macros.protein,
-                fat: macros.fat,
-                carbs: macros.carbs,
-                fiber: macros.fiber,
-                sugars: macros.sugars,
-            },
-        };
-
-        await addEntry({
-            hour: logHour,
-            entry: entryData,
-        });
-
-        setLogHour(null);
-        setIsExpanded(false);
-        navigate("/food");
-    };
-
     return (
         <div className="flex flex-col h-full">
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto pb-4">
-                {/* Header with back button and product name */}
+                {/* Header with product name */}
                 <div className="flex items-start gap-3 mb-4">
                     <h1 className="text-xl font-bold text-foreground capitalize flex-1">
                         {product.product_name ?? "Unknown Product"}
@@ -342,5 +222,22 @@ export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
                 </CollapsibleSection>
             </div>
         </div>
+    );
+}
+
+/**
+ * Product detail view with loading state handled by Suspense.
+ */
+export default function ProductDetail({ code }: Readonly<ProductDetailProps>) {
+    return (
+        <Suspense
+            fallback={
+                <div className="flex items-center justify-center py-12 h-full">
+                    <LoadingSpinner show={true} />
+                </div>
+            }
+        >
+            <ProductDetailContent code={code} />
+        </Suspense>
     );
 }

@@ -18,6 +18,8 @@ export { MacroBadge } from './components/macroBadge';
 // UI Components
 export { Button, buttonVariants } from './ui/button';
 export type { ButtonProps } from './ui/button';
+export { Input } from './ui/input';
+export type { InputProps } from './ui/input';
 
 // Utilities
 export { cn } from './lib/utils';
