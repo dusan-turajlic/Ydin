@@ -18,7 +18,7 @@ export default function TopNavigation() {
     }
 
     return (
-        <div className="sticky top-0 z-10 left-0 right-0 p-3 px-4 bg-primary-foreground">
+        <div className="sticky top-0 pt-[env(safe-area-inset-top)] border-t-8 border-primary-foreground z-15 left-0 right-0 p-3 px-4 bg-primary-foreground">
             <div className="relative flex items-center justify-between">
                 <div className="inset-y-0 left-0 flex items-center">
                     <button

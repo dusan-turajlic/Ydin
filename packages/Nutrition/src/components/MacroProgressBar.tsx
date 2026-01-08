@@ -22,30 +22,33 @@ export default function MacroProgressBar() {
     const totals = useAtomValue(dailyTotalsAtom);
 
     return (
-        <div className="flex flex-col gap-2 px-4 pb-2 my-4 sticky top-10 z-10 bg-primary-foreground">
-            <div className="grid grid-cols-4 gap-2">
-                {macroConfigs.map(({ key, icon, color }) => {
-                    const value = Math.round(totals[key]);
-                    const max = targets[key];
+        <>
+            {/** the top calc here looks very weird, but is just some logic so we cannount for the hight of the notch on apple iPhones  */}
+            <div className="flex flex-col gap-2 px-4 my-4 pb-2 sticky top-[calc(env(safe-area-inset-top)_+_calc(var(--spacing)_*_9))] z-20 bg-primary-foreground">
+                <div className="grid grid-cols-4 gap-2">
+                    {macroConfigs.map(({ key, icon, color }) => {
+                        const value = Math.round(totals[key]);
+                        const max = targets[key];
 
-                    return (
-                        <div key={key} className="flex flex-col gap-1">
-                            <div className="flex items-center">
-                                <span className="text-[0.625rem] text-foreground-secondary">{icon}</span>
-                                <span className="text-[0.625rem] text-foreground-secondary ml-1">
-                                    {value} / {max}
-                                </span>
+                        return (
+                            <div key={key} className="flex flex-col gap-1">
+                                <div className="flex items-center">
+                                    <span className="text-[0.625rem] text-foreground-secondary">{icon}</span>
+                                    <span className="text-[0.625rem] text-foreground-secondary ml-1">
+                                        {value} / {max}
+                                    </span>
+                                </div>
+                                <ProgressIndicator
+                                    value={value}
+                                    max={max}
+                                    size="sm"
+                                    color={color}
+                                />
                             </div>
-                            <ProgressIndicator
-                                value={value}
-                                max={max}
-                                size="sm"
-                                color={color}
-                            />
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
-        </div>
+        </>
     );
 }
