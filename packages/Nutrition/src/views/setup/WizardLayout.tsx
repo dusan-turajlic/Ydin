@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@ydin/design-system";
 
@@ -104,9 +104,8 @@ function ProgressBar({
                 return (
                     <div
                         key={i}
-                        className={`h-1 w-12 rounded-full transition-colors ${
-                            isActive ? "bg-gold" : "bg-muted"
-                        }`}
+                        className={`h-1 w-12 rounded-full transition-colors ${isActive ? "bg-gold" : "bg-muted"
+                            }`}
                     />
                 );
             })}

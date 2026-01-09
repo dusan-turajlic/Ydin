@@ -11,8 +11,8 @@ import type { DailyTargets } from "@/services/storage/targets";
  */
 interface MacroInputProps {
     label: string;
-    value: number | null;
-    onChange: (value: number | null) => void;
+    value: number | undefined;
+    onChange: (value: number | undefined) => void;
     unit: string;
     color?: string;
 }
@@ -35,7 +35,7 @@ function MacroInput({
         setInputValue(raw);
 
         if (raw === "") {
-            onChange(null);
+            onChange(undefined);
             return;
         }
 
@@ -70,22 +70,22 @@ export function Manual() {
     const [wizardData, setWizardData] = useAtom(wizardDataAtom);
 
     const [targets, setTargets] = useState<Partial<DailyTargets>>({
-        calories: wizardData.manualTargets?.calories ?? null,
-        protein: wizardData.manualTargets?.protein ?? null,
-        fat: wizardData.manualTargets?.fat ?? null,
-        carbs: wizardData.manualTargets?.carbs ?? null,
+        calories: wizardData.manualTargets?.calories,
+        protein: wizardData.manualTargets?.protein,
+        fat: wizardData.manualTargets?.fat,
+        carbs: wizardData.manualTargets?.carbs,
         fiber: wizardData.manualTargets?.fiber ?? 30,
     });
 
-    const updateTarget = (key: keyof DailyTargets, value: number | null) => {
+    const updateTarget = (key: keyof DailyTargets, value: number | undefined) => {
         setTargets((prev) => ({ ...prev, [key]: value }));
     };
 
     const isComplete =
-        targets.calories !== null &&
-        targets.protein !== null &&
-        targets.fat !== null &&
-        targets.carbs !== null;
+        targets.calories !== undefined &&
+        targets.protein !== undefined &&
+        targets.fat !== undefined &&
+        targets.carbs !== undefined;
 
     const handleNext = () => {
         if (!isComplete) return;
@@ -130,7 +130,7 @@ export function Manual() {
                 <div className="space-y-3">
                     <MacroInput
                         label="Calories"
-                        value={targets.calories ?? null}
+                        value={targets.calories}
                         onChange={(v) => updateTarget("calories", v)}
                         unit="kcal"
                         color="text-gold"
@@ -140,7 +140,7 @@ export function Manual() {
 
                     <MacroInput
                         label="Protein"
-                        value={targets.protein ?? null}
+                        value={targets.protein}
                         onChange={(v) => updateTarget("protein", v)}
                         unit="g"
                         color="text-chart-blue"
@@ -148,7 +148,7 @@ export function Manual() {
 
                     <MacroInput
                         label="Fat"
-                        value={targets.fat ?? null}
+                        value={targets.fat}
                         onChange={(v) => updateTarget("fat", v)}
                         unit="g"
                         color="text-chart-red"
@@ -156,7 +156,7 @@ export function Manual() {
 
                     <MacroInput
                         label="Carbs"
-                        value={targets.carbs ?? null}
+                        value={targets.carbs}
                         onChange={(v) => updateTarget("carbs", v)}
                         unit="g"
                         color="text-chart-green"
@@ -164,7 +164,7 @@ export function Manual() {
 
                     <MacroInput
                         label="Fiber"
-                        value={targets.fiber ?? null}
+                        value={targets.fiber}
                         onChange={(v) => updateTarget("fiber", v)}
                         unit="g"
                         color="text-foreground-secondary"
