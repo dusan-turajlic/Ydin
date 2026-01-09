@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { useSetAtom } from "jotai";
-import { Button } from "@ydin/design-system";
 import { WizardLayout, ArrowRightIcon } from "./WizardLayout";
 import { wizardDataAtom, type SetupMode } from "@/atoms/onboarding";
 
