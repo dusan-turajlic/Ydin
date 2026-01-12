@@ -67,7 +67,7 @@ function MacroInput({
 
 export function Manual() {
     const navigate = useNavigate();
-    const [wizardData, setWizardData] = useAtom(wizardDataAtom);
+    const [wizardData] = useAtom(wizardDataAtom);
 
     const [targets, setTargets] = useState<Partial<DailyTargets>>({
         calories: wizardData.manualTargets?.calories,
@@ -98,8 +98,18 @@ export function Manual() {
             // Save to storage with manual targets
             await createSettings({
                 setupMode: "manual",
-                profile: null,
-                activity: null,
+                profile: {
+                    age: wizardData.age!,
+                    height: wizardData.height!,
+                    heightUnit: wizardData.heightUnit,
+                    weight: wizardData.weight!,
+                    weightUnit: wizardData.weightUnit,
+                    biologicalProfile: wizardData.biologicalProfile!,
+                },
+                activity: {
+                    averageDailySteps: wizardData.averageDailySteps!,
+                    strengthSessionsPerWeek: wizardData.strengthSessionsPerWeek,
+                },
                 countryCode: wizardData.countryCode!,
                 calorieStrategy: "same",
                 targets: {

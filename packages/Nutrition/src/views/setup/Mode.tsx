@@ -5,12 +5,6 @@ import { WizardLayout, ArrowRightIcon } from "./WizardLayout";
 
 export function Mode() {
     const navigate = useNavigate();
-
-    const handleSelect = (path: string) => {
-
-        navigate(path);
-    };
-
     return (
         <WizardLayout
             currentStep={1}
