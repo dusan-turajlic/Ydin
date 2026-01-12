@@ -1,7 +1,8 @@
 // Default WASM URL - assumes the file is served from the app's public folder
-// Consuming apps should have wa-sqlite-async.wasm in their public directory
+// Consuming apps should have wa-sqlite.wasm in their public directory
+// OPFS uses the sync WASM (wa-sqlite.wasm) which is smaller and faster
 // This can be overridden via ProviderOptions.wasmUrl
-export const wasmUrl = '/wa-sqlite-async.wasm';
+export const wasmUrl = '/wa-sqlite.wasm';
 
 // Cache for the WASM blob URL - ensures the WASM file is only fetched once per context
 // Map of source URL -> blob URL

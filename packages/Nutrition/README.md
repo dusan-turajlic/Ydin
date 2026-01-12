@@ -54,7 +54,7 @@ pnpm build         # Builds all packages including this one
 | **Build Tool** | Vite |
 | **Styling** | Tailwind CSS |
 | **State** | Jotai |
-| **Storage** | SQLite WASM (primary), IndexedDB, LocalStorage |
+| **Storage** | SQLite WASM with OPFS (primary), IndexedDB, LocalStorage |
 | **Testing** | Vitest, React Testing Library |
 
 ## Architecture
@@ -137,6 +137,55 @@ src/
 ├── utils/              # Utility functions
 └── views/              # Page-level components
 ```
+
+## Deployment
+
+### Required HTTP Headers
+
+This app uses SQLite WASM with OPFS (Origin Private File System) for high-performance local storage. OPFS requires `SharedArrayBuffer`, which browsers only enable when specific security headers are present.
+
+**Your production server must include these HTTP headers:**
+
+```
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp
+```
+
+#### Configuration by Platform
+
+| Platform | Configuration |
+|----------|---------------|
+| **Vercel** | Add to `vercel.json` under `headers` |
+| **Netlify** | Add to `_headers` file |
+| **Cloudflare Pages** | Add to `_headers` file |
+| **Nginx** | Use `add_header` directive |
+| **Apache** | Use `Header set` in `.htaccess` |
+
+Example `vercel.json`:
+
+```json
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
+        { "key": "Cross-Origin-Embedder-Policy", "value": "require-corp" }
+      ]
+    }
+  ]
+}
+```
+
+Example `_headers` (Netlify/Cloudflare):
+
+```
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+```
+
+Without these headers, the SQLite database will fail to initialize in production.
 
 ## Contributing
 

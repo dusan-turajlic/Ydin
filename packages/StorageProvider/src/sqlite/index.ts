@@ -1,7 +1,7 @@
 import BaseProvider, { type IBaseSearchQuary, type ProviderOptions } from "../base";
 import { v4 as uuidv4 } from 'uuid';
 import { initSQLite, type SQLiteDB } from '@subframe7536/sqlite-wasm';
-import { useIdbStorage } from '@subframe7536/sqlite-wasm/idb';
+import { useOpfsStorage } from '@subframe7536/sqlite-wasm/opfs';
 import { getCachedWasmUrl, wasmUrl as defaultWasmUrl } from '../assets/wasm';
 
 const DB_STORE_NAME = 'app_store';
@@ -61,9 +61,10 @@ export default class SQLiteProvider extends BaseProvider {
                 // Get cached WASM blob URL - ensures WASM is only fetched once per context
                 // even if multiple SQLiteProvider instances are created
                 const wasmBlobUrl = await getCachedWasmUrl(this.options?.wasmUrl ?? defaultWasmUrl);
-                const storageOptions = { url: wasmBlobUrl };
+                // OPFS storage - faster and more reliable than IndexedDB
+                // Note: OPFS requires the app to run in a Web Worker context
                 const db = await initSQLite(
-                    useIdbStorage(`${this.dbName}.db`, storageOptions)
+                    useOpfsStorage(`${this.dbName}.db`, { url: wasmBlobUrl })
                 );
 
                 // Create table if it doesn't exist

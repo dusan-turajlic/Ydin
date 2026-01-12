@@ -1,8 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Route, Routes, BrowserRouter, Navigate } from "react-router-dom";
 import { useAtomValue } from "jotai";
-import { useOpenFoodDex } from "@/hooks/useOpenFoodDex";
-import { DEFAULT_CONTRY_CODE_FROM_CATALOG, getLocelizedIndexUrl } from "./constants";
 import { setupCompleteAtom } from "@/atoms/targets";
 
 // Lazy load views
@@ -19,9 +17,6 @@ const Training = lazy(() => import("@/views/setup/Training"));
 const Goal = lazy(() => import("@/views/setup/Goal"));
 const Country = lazy(() => import("@/views/setup/Country"));
 const Manual = lazy(() => import("@/views/setup/Manual"));
-
-// Finland @todo: Get country from user settings after onboarding
-const HARD_CODED_COUNTRY_CODE = "fi";
 
 /**
  * Loading fallback for lazy-loaded routes
@@ -61,11 +56,6 @@ function RequireSetup({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  // Install the global index
-  useOpenFoodDex(getLocelizedIndexUrl(DEFAULT_CONTRY_CODE_FROM_CATALOG));
-  // Install the local indexes
-  useOpenFoodDex(getLocelizedIndexUrl(HARD_CODED_COUNTRY_CODE));
-
   return (
     <BrowserRouter>
       <Suspense fallback={<LoadingFallback />}>

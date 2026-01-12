@@ -1,120 +1,8 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAtom } from "jotai";
-import { Button } from "@ydin/design-system";
+import { Button, Input, SegmentedControl } from "@ydin/design-system";
 import { WizardLayout, ArrowRightIcon } from "./WizardLayout";
 import { wizardDataAtom, type HeightUnit, type WeightUnit } from "@/atoms/onboarding";
-
-/**
- * Unit toggle component
- */
-interface UnitToggleProps<T extends string> {
-    options: { value: T; label: string }[];
-    value: T;
-    onChange: (value: T) => void;
-}
-
-function UnitToggle<T extends string>({
-    options,
-    value,
-    onChange,
-}: UnitToggleProps<T>) {
-    return (
-        <div className="flex bg-muted rounded-full p-1">
-            {options.map((option) => (
-                <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => onChange(option.value)}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${
-                        value === option.value
-                            ? "bg-surface text-foreground"
-                            : "text-foreground-secondary"
-                    }`}
-                >
-                    {option.label}
-                </button>
-            ))}
-        </div>
-    );
-}
-
-/**
- * Numeric input with large display
- */
-interface NumericInputProps {
-    label: string;
-    value: number | null;
-    onChange: (value: number | null) => void;
-    unit?: string;
-    unitToggle?: React.ReactNode;
-    placeholder?: string;
-    min?: number;
-    max?: number;
-    step?: number;
-}
-
-function NumericInput({
-    label,
-    value,
-    onChange,
-    unit,
-    unitToggle,
-    placeholder = "0",
-    min = 0,
-    max = 999,
-    step = 1,
-}: NumericInputProps) {
-    const [inputValue, setInputValue] = useState(value?.toString() ?? "");
-
-    useEffect(() => {
-        setInputValue(value?.toString() ?? "");
-    }, [value]);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const raw = e.target.value;
-        setInputValue(raw);
-
-        if (raw === "") {
-            onChange(null);
-            return;
-        }
-
-        const num = parseFloat(raw);
-        if (!isNaN(num) && num >= min && num <= max) {
-            onChange(num);
-        }
-    };
-
-    return (
-        <div className="space-y-2">
-            <div className="flex items-center justify-between">
-                <label className="text-sm text-gold uppercase tracking-wider font-medium">
-                    {label}
-                </label>
-                {unitToggle}
-            </div>
-            <div className="flex items-center gap-3 border-b border-border pb-2">
-                <input
-                    type="number"
-                    inputMode="decimal"
-                    value={inputValue}
-                    onChange={handleChange}
-                    placeholder={placeholder}
-                    min={min}
-                    max={max}
-                    step={step}
-                    className="flex-1 bg-transparent text-4xl font-semibold text-foreground placeholder:text-muted-foreground outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-                {unit && (
-                    <span className="text-foreground-secondary text-lg">
-                        {unit}
-                    </span>
-                )}
-            </div>
-        </div>
-    );
-}
 
 export function Measurements() {
     const navigate = useNavigate();
@@ -138,6 +26,20 @@ export function Measurements() {
         setWizardData((prev) => ({ ...prev, [field]: value }));
     };
 
+    const handleNumericChange = (
+        field: "age" | "height" | "weight",
+        value: string
+    ) => {
+        if (value === "") {
+            updateField(field, null);
+            return;
+        }
+        const num = Number.parseFloat(value);
+        if (!Number.isNaN(num)) {
+            updateField(field, num);
+        }
+    };
+
     return (
         <WizardLayout currentStep={1} totalSteps={4}>
             {/* Content */}
@@ -153,25 +55,27 @@ export function Measurements() {
                 </p>
 
                 {/* Form */}
-                <div className="space-y-8">
+                <div className="space-y-6">
                     {/* Age */}
-                    <NumericInput
+                    <Input
+                        type="number"
+                        size="xl"
                         label="Age"
-                        value={wizardData.age}
-                        onChange={(v) => updateField("age", v)}
-                        unit="years"
-                        min={13}
-                        max={120}
-                        step={1}
+                        labelClassName="ml-3 text-xl font-medium text-accent"
+                        value={wizardData.age?.toString() ?? ""}
+                        onChange={(value) => handleNumericChange("age", value)}
+                        placeholder="0"
+                        endAdornment={
+                            <span className="text-foreground-secondary px-2">years</span>
+                        }
                     />
 
                     {/* Height */}
-                    <NumericInput
-                        label="Height"
-                        value={wizardData.height}
-                        onChange={(v) => updateField("height", v)}
-                        unitToggle={
-                            <UnitToggle<HeightUnit>
+                    <div className="space-y-6 relative">
+                        <div className="flex items-center justify-between absolute -top-2 right-0">
+                            <SegmentedControl<HeightUnit>
+                                size="sm"
+                                aria-label="Height unit"
                                 options={[
                                     { value: "cm", label: "CM" },
                                     { value: "ft", label: "FT" },
@@ -179,19 +83,29 @@ export function Measurements() {
                                 value={wizardData.heightUnit}
                                 onChange={(v) => updateField("heightUnit", v)}
                             />
-                        }
-                        min={wizardData.heightUnit === "cm" ? 100 : 3}
-                        max={wizardData.heightUnit === "cm" ? 250 : 8}
-                        step={wizardData.heightUnit === "cm" ? 1 : 0.1}
-                    />
+                        </div>
+                        <Input
+                            type="number"
+                            size="xl"
+                            label="Height"
+                            labelClassName="ml-3 text-xl font-medium text-accent"
+                            value={wizardData.height?.toString() ?? ""}
+                            onChange={(value) => handleNumericChange("height", value)}
+                            placeholder="0"
+                            endAdornment={
+                                <span className="text-foreground-secondary px-2">
+                                    {wizardData.heightUnit}
+                                </span>
+                            }
+                        />
+                    </div>
 
                     {/* Weight */}
-                    <NumericInput
-                        label="Weight"
-                        value={wizardData.weight}
-                        onChange={(v) => updateField("weight", v)}
-                        unitToggle={
-                            <UnitToggle<WeightUnit>
+                    <div className="space-y-6 relative">
+                        <div className="flex items-center justify-between absolute -top-2 right-0">
+                            <SegmentedControl<WeightUnit>
+                                size="sm"
+                                aria-label="Weight unit"
                                 options={[
                                     { value: "lbs", label: "LBS" },
                                     { value: "kg", label: "KG" },
@@ -199,11 +113,22 @@ export function Measurements() {
                                 value={wizardData.weightUnit}
                                 onChange={(v) => updateField("weightUnit", v)}
                             />
-                        }
-                        min={wizardData.weightUnit === "kg" ? 30 : 66}
-                        max={wizardData.weightUnit === "kg" ? 300 : 660}
-                        step={0.1}
-                    />
+                        </div>
+                        <Input
+                            type="number"
+                            size="xl"
+                            label="Weight"
+                            labelClassName="ml-3 text-xl font-medium text-accent"
+                            value={wizardData.weight?.toString() ?? ""}
+                            onChange={(value) => handleNumericChange("weight", value)}
+                            placeholder="0"
+                            endAdornment={
+                                <span className="text-foreground-secondary px-2">
+                                    {wizardData.weightUnit}
+                                </span>
+                            }
+                        />
+                    </div>
                 </div>
 
                 {/* Info hint */}
@@ -212,7 +137,7 @@ export function Measurements() {
                         <span className="text-xs text-foreground-secondary">i</span>
                     </div>
                     <p className="text-sm text-foreground-secondary">
-                        You can update these details anytime in your profile settings to adjust your macro goals.
+                        This information is used to calculate your basal metabolic rate (BMR). Simply put, it's how much energy your body needs to just keep the lights on.
                     </p>
                 </div>
             </div>
@@ -234,4 +159,3 @@ export function Measurements() {
 }
 
 export default Measurements;
-

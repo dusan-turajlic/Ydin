@@ -1,54 +1,13 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAtom } from "jotai";
-import { Button } from "@ydin/design-system";
+import { list as countryFlagList } from "country-flag-emoji";
+import { Button, SearchInput, RadioGroup, Radio, AriaForm, SelectionIndicator } from "@ydin/design-system";
 import { WizardLayout } from "./WizardLayout";
 import { wizardDataAtom } from "@/atoms/onboarding";
-import { createSettings } from "@/services/storage/targets";
-import { recalculateTargets } from "@/utils/ree";
-
-/**
- * Search icon
- */
-function SearchIcon() {
-    return (
-        <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-foreground-secondary"
-        >
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
-        </svg>
-    );
-}
-
-/**
- * Check icon
- */
-function CheckIcon() {
-    return (
-        <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-gold"
-        >
-            <polyline points="20 6 9 17 4 12" />
-        </svg>
-    );
-}
+import { Check } from "@ydin/design-system/icons";
+import { startOpenFoodDex } from "@/services/api/startOpenFoodDexWorker";
+import { DEFAULT_CONTRY_CODE_FROM_CATALOG, getLocelizedIndexUrl } from "@/constants";
 
 interface Country {
     code: string;
@@ -56,76 +15,24 @@ interface Country {
     flag: string;
 }
 
-const SUGGESTED_COUNTRIES: Country[] = [
-    { code: "US", name: "United States", flag: "🇺🇸" },
-];
+// Convert library format to our Country interface
+const ALL_COUNTRIES: Country[] = countryFlagList.map((c) => ({
+    code: c.code,
+    name: c.name,
+    flag: c.emoji,
+}));
 
-const POPULAR_COUNTRIES: Country[] = [
-    { code: "GB", name: "United Kingdom", flag: "🇬🇧" },
-    { code: "CA", name: "Canada", flag: "🇨🇦" },
-    { code: "AU", name: "Australia", flag: "🇦🇺" },
-];
+const POPULAR_CODES = new Set(["FI", "SE", "NO", "DK", "GB"]);
 
-const ALL_COUNTRIES: Country[] = [
-    { code: "AF", name: "Afghanistan", flag: "🇦🇫" },
-    { code: "AL", name: "Albania", flag: "🇦🇱" },
-    { code: "DZ", name: "Algeria", flag: "🇩🇿" },
-    { code: "AR", name: "Argentina", flag: "🇦🇷" },
-    { code: "AT", name: "Austria", flag: "🇦🇹" },
-    { code: "BE", name: "Belgium", flag: "🇧🇪" },
-    { code: "BR", name: "Brazil", flag: "🇧🇷" },
-    { code: "CN", name: "China", flag: "🇨🇳" },
-    { code: "DK", name: "Denmark", flag: "🇩🇰" },
-    { code: "FI", name: "Finland", flag: "🇫🇮" },
-    { code: "FR", name: "France", flag: "🇫🇷" },
-    { code: "DE", name: "Germany", flag: "🇩🇪" },
-    { code: "IN", name: "India", flag: "🇮🇳" },
-    { code: "IE", name: "Ireland", flag: "🇮🇪" },
-    { code: "IT", name: "Italy", flag: "🇮🇹" },
-    { code: "JP", name: "Japan", flag: "🇯🇵" },
-    { code: "MX", name: "Mexico", flag: "🇲🇽" },
-    { code: "NL", name: "Netherlands", flag: "🇳🇱" },
-    { code: "NZ", name: "New Zealand", flag: "🇳🇿" },
-    { code: "NO", name: "Norway", flag: "🇳🇴" },
-    { code: "PL", name: "Poland", flag: "🇵🇱" },
-    { code: "PT", name: "Portugal", flag: "🇵🇹" },
-    { code: "RU", name: "Russia", flag: "🇷🇺" },
-    { code: "ES", name: "Spain", flag: "🇪🇸" },
-    { code: "SE", name: "Sweden", flag: "🇸🇪" },
-    { code: "CH", name: "Switzerland", flag: "🇨🇭" },
-];
-
-interface CountryRowProps {
-    country: Country;
-    isSelected: boolean;
-    onSelect: () => void;
-}
-
-function CountryRow({ country, isSelected, onSelect }: CountryRowProps) {
-    return (
-        <button
-            type="button"
-            onClick={onSelect}
-            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted transition-colors"
-        >
-            <span className="text-2xl">{country.flag}</span>
-            <span className="flex-1 text-left text-foreground">
-                {country.name}
-            </span>
-            {isSelected ? (
-                <CheckIcon />
-            ) : (
-                <div className="w-5 h-5 rounded-full border-2 border-foreground-secondary" />
-            )}
-        </button>
-    );
-}
+const POPULAR_COUNTRIES = ALL_COUNTRIES.filter((c) =>
+    POPULAR_CODES.has(c.code)
+);
 
 interface CountrySectionProps {
-    title: string;
-    countries: Country[];
-    selectedCode: string | null;
-    onSelect: (code: string) => void;
+    readonly title: string;
+    readonly countries: Country[];
+    readonly selectedCode: string | null;
+    readonly onSelect: (code: string) => void;
 }
 
 function CountrySection({
@@ -141,16 +48,29 @@ function CountrySection({
             <h3 className="px-4 py-2 text-xs text-foreground-secondary uppercase tracking-wider font-medium">
                 {title}
             </h3>
-            <div className="bg-surface rounded-xl overflow-hidden divide-y divide-border">
+            <RadioGroup
+                value={selectedCode ?? undefined}
+                onChange={onSelect}
+                className="bg-surface rounded-xl overflow-hidden divide-y divide-border"
+                aria-labelledby={title}
+                isRequired
+            >
                 {countries.map((country) => (
-                    <CountryRow
+                    <Radio
                         key={country.code}
-                        country={country}
-                        isSelected={selectedCode === country.code}
-                        onSelect={() => onSelect(country.code)}
-                    />
+                        value={country.code}
+                        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted transition-colors cursor-pointer outline-none focus-visible:bg-muted"
+                    >
+                        <span className="text-2xl">{country.flag}</span>
+                        <span className="flex-1 text-left text-foreground">
+                            {country.name}
+                        </span>
+                        <SelectionIndicator className="w-5 h-5">
+                            <Check className="w-5 h-5 text-gold" />
+                        </SelectionIndicator>
+                    </Radio>
                 ))}
-            </div>
+            </RadioGroup>
         </div>
     );
 }
@@ -159,7 +79,6 @@ export function Country() {
     const navigate = useNavigate();
     const [wizardData, setWizardData] = useAtom(wizardDataAtom);
     const [searchQuery, setSearchQuery] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSelect = (code: string) => {
         setWizardData((prev) => ({ ...prev, countryCode: code }));
@@ -169,7 +88,6 @@ export function Country() {
     const filteredCountries = useMemo(() => {
         if (!searchQuery.trim()) {
             return {
-                suggested: SUGGESTED_COUNTRIES,
                 popular: POPULAR_COUNTRIES,
                 all: ALL_COUNTRIES,
             };
@@ -177,7 +95,6 @@ export function Country() {
 
         const query = searchQuery.toLowerCase();
         const allCountries = [
-            ...SUGGESTED_COUNTRIES,
             ...POPULAR_COUNTRIES,
             ...ALL_COUNTRIES,
         ];
@@ -191,84 +108,43 @@ export function Country() {
         );
 
         return {
-            suggested: [],
             popular: [],
             all: filtered,
         };
     }, [searchQuery]);
 
-    const handleContinue = async () => {
-        if (!wizardData.countryCode || isSubmitting) return;
+    const handleContinue = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!wizardData.countryCode) return;
+        // Install the global index
+        startOpenFoodDex(getLocelizedIndexUrl(DEFAULT_CONTRY_CODE_FROM_CATALOG));
+        // Install the local indexes
+        startOpenFoodDex(getLocelizedIndexUrl(wizardData.countryCode));
 
-        setIsSubmitting(true);
-
-        try {
-            // Calculate final targets
-            const targets = recalculateTargets(
-                wizardData.dailyCalories!,
-                wizardData.weight!,
-                wizardData.weightUnit
-            );
-
-            // Save to storage
-            await createSettings({
-                setupMode: wizardData.setupMode!,
-                profile: {
-                    age: wizardData.age!,
-                    height: wizardData.height!,
-                    heightUnit: wizardData.heightUnit,
-                    weight: wizardData.weight!,
-                    weightUnit: wizardData.weightUnit,
-                    biologicalProfile: wizardData.biologicalProfile!,
-                },
-                activity: {
-                    averageDailySteps: wizardData.averageDailySteps!,
-                    strengthSessionsPerWeek: wizardData.strengthSessionsPerWeek,
-                },
-                countryCode: wizardData.countryCode,
-                calorieStrategy: "same",
-                targets,
-            });
-
-            // Navigate to main app
-            navigate("/food", { replace: true });
-        } catch (error) {
-            console.error("Failed to save settings:", error);
-            setIsSubmitting(false);
-        }
+        navigate("/setup/mode");
     };
 
     return (
         <WizardLayout showProgress={false}>
             {/* Header */}
-            <div className="py-4">
+            <div className="py-4 sticky top-[env(safe-area-inset-top)] z-25">
                 <h1 className="text-xl font-bold text-foreground text-center">
                     Select Region
                 </h1>
             </div>
 
             {/* Search */}
-            <div className="mb-4">
-                <div className="flex items-center gap-3 px-4 py-3 bg-surface rounded-xl">
-                    <SearchIcon />
-                    <input
-                        type="text"
-                        placeholder="Search country"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="flex-1 bg-transparent text-foreground placeholder:text-foreground-secondary outline-none"
-                    />
-                </div>
+            <div className="mb-4 sticky top-[calc(env(safe-area-inset-top)_+_calc(var(--spacing)_*_14))]">
+                <SearchInput
+                    aria-label="Search country"
+                    placeholder="Search country"
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                />
             </div>
 
             {/* Country list */}
-            <div className="flex-1 overflow-y-auto space-y-4 -mx-4">
-                <CountrySection
-                    title="Suggested"
-                    countries={filteredCountries.suggested}
-                    selectedCode={wizardData.countryCode}
-                    onSelect={handleSelect}
-                />
+            <AriaForm onSubmit={handleContinue} className="flex-1 overflow-y-auto space-y-4 -mx-4">
                 <CountrySection
                     title="Popular"
                     countries={filteredCountries.popular}
@@ -281,22 +157,22 @@ export function Country() {
                     selectedCode={wizardData.countryCode}
                     onSelect={handleSelect}
                 />
-            </div>
+                <div className="h-32" />
 
-            {/* Footer */}
-            <div className="py-6 -mx-4 px-4 bg-background">
-                <Button
-                    className="w-full"
-                    size="xl"
-                    onPress={handleContinue}
-                    isDisabled={!wizardData.countryCode || isSubmitting}
-                >
-                    {isSubmitting ? "Saving..." : "Continue"}
-                </Button>
-            </div>
+                {/* Footer */}
+                <div className="py-6 -mx-4 px-4 flex justify-center fixed bottom-0 left-0 right-0 bg-background">
+                    <Button
+                        className="w-full"
+                        size="xl"
+                        type="submit"
+                        isDisabled={!wizardData.countryCode}
+                    >
+                        Continue
+                    </Button>
+                </div>
+            </AriaForm>
         </WizardLayout>
     );
 }
 
 export default Country;
-
