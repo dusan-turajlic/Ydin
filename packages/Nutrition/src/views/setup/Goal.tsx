@@ -55,7 +55,7 @@ const MAX_CALORIES = 4000;
 
 export function Goal() {
     const navigate = useNavigate();
-    const [wizardData, setWizardData] = useAtom(wizardDataAtom);
+    const [wizardData] = useAtom(wizardDataAtom);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Calculate recommended calories from profile data
