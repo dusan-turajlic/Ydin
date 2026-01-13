@@ -1,4 +1,4 @@
-import { Button } from "@ydin/design-system";
+import { Button, FixedModalSheet, FixedModalSheetContent } from "@ydin/design-system";
 
 /**
  * Heart icon for Apple Health
@@ -47,99 +47,70 @@ interface StepItem {
 }
 
 interface StepCountHelpModalProps {
-    isOpen: boolean;
-    onClose: () => void;
+    readonly isOpen: boolean;
+    readonly onClose: () => void;
+}
+
+const appleHealthSteps: StepItem[] = [
+    { text: "Open the Health app on your iPhone.", bold: ["Health app"] },
+    { text: "Tap on the Browse tab at the bottom right.", bold: ["Browse"] },
+    { text: "Navigate to Activity > Steps.", bold: ["Activity", "Steps"] },
+    { text: "Check the Average for the last 7 days at the top of the chart.", bold: ["Average"] },
+];
+
+const fitnessTrackerSteps: StepItem[] = [
+    { text: "Open your device's Companion App.", bold: ["Companion App"] },
+    { text: "Go to the Dashboard or Activity tab.", bold: ["Dashboard", "Activity"] },
+    { text: "Find the Steps card to view your weekly average.", bold: ["Steps"] },
+];
+
+function renderStep(step: StepItem, index: number, isFirst: boolean) {
+    let textContent = step.text;
+    if (step.bold) {
+        step.bold.forEach((boldText) => {
+            textContent = textContent.replace(
+                boldText,
+                `<strong class="text-foreground font-medium">${boldText}</strong>`
+            );
+        });
+    }
+
+    return (
+        <div key={index} className="flex items-start gap-3">
+            <div
+                className={`w-3 h-3 rounded-full mt-1.5 shrink-0 ${
+                    isFirst ? "bg-gold" : "bg-foreground-secondary"
+                }`}
+            />
+            <p
+                className="text-sm text-foreground-secondary"
+                dangerouslySetInnerHTML={{ __html: textContent }}
+            />
+        </div>
+    );
 }
 
 export function StepCountHelpModal({ isOpen, onClose }: StepCountHelpModalProps) {
-    if (!isOpen) return null;
-
-    const appleHealthSteps: StepItem[] = [
-        { text: "Open the Health app on your iPhone.", bold: ["Health app"] },
-        { text: "Tap on the Browse tab at the bottom right.", bold: ["Browse"] },
-        { text: "Navigate to Activity > Steps.", bold: ["Activity", "Steps"] },
-        { text: "Check the Average for the last 7 days at the top of the chart.", bold: ["Average"] },
-    ];
-
-    const fitnessTrackerSteps: StepItem[] = [
-        { text: "Open your device's Companion App.", bold: ["Companion App"] },
-        { text: "Go to the Dashboard or Activity tab.", bold: ["Dashboard", "Activity"] },
-        { text: "Find the Steps card to view your weekly average.", bold: ["Steps"] },
-    ];
-
-    const renderStep = (step: StepItem, index: number, isFirst: boolean) => {
-        let textContent = step.text;
-        if (step.bold) {
-            step.bold.forEach((boldText) => {
-                textContent = textContent.replace(
-                    boldText,
-                    `<strong class="text-foreground font-medium">${boldText}</strong>`
-                );
-            });
-        }
-
-        return (
-            <div key={index} className="flex items-start gap-3">
-                <div
-                    className={`w-3 h-3 rounded-full mt-1.5 shrink-0 ${
-                        isFirst ? "bg-gold" : "bg-foreground-secondary"
-                    }`}
-                />
-                <p
-                    className="text-sm text-foreground-secondary"
-                    dangerouslySetInnerHTML={{ __html: textContent }}
-                />
-            </div>
-        );
-    };
-
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-end justify-center"
-            onClick={onClose}
+        <FixedModalSheet
+            open={isOpen}
+            onOpenChange={(open) => !open && onClose()}
+            snapPoints={[0.85]}
+            dismissible
         >
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/60" />
-
-            {/* Modal */}
-            <div
-                className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto bg-surface rounded-t-3xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-300"
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* Close button */}
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-foreground-secondary hover:text-foreground"
-                    aria-label="Close"
-                >
-                    <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    >
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                </button>
-
+            <FixedModalSheetContent>
                 {/* Title */}
-                <h2 className="text-2xl font-bold text-foreground mb-2">
+                <h2 className="text-2xl font-bold text-foreground">
                     Find your step count
                 </h2>
 
                 {/* Subtitle */}
-                <p className="text-foreground-secondary mb-6">
+                <p className="text-foreground-secondary">
                     To calculate your daily energy expenditure accurately, we need your average weekly step count. Here is how to find it.
                 </p>
 
                 {/* Apple Health section */}
-                <div className="mb-6">
+                <div>
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
                             <HeartIcon />
@@ -162,7 +133,7 @@ export function StepCountHelpModal({ isOpen, onClose }: StepCountHelpModalProps)
                 </div>
 
                 {/* Fitness Trackers section */}
-                <div className="mb-6">
+                <div>
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
                             <WatchIcon />
@@ -192,10 +163,9 @@ export function StepCountHelpModal({ isOpen, onClose }: StepCountHelpModalProps)
                 >
                     I found it
                 </Button>
-            </div>
-        </div>
+            </FixedModalSheetContent>
+        </FixedModalSheet>
     );
 }
 
 export default StepCountHelpModal;
-

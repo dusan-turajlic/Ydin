@@ -11,7 +11,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@ydin/storage-provider": ["../StorageProvider/src/index.ts"]
+      "@ydin/storage-provider": ["../StorageProvider/src/index.ts"],
+      "@ydin/storage-provider/workers": ["../StorageProvider/src/workers/index.ts"]
     }
   },
   "include": ["src"]

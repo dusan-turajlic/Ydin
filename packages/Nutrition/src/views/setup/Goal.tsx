@@ -4,7 +4,8 @@ import { useAtom } from "jotai";
 import { Button } from "@ydin/design-system";
 import { WizardLayout } from "./WizardLayout";
 import { wizardDataAtom } from "@/atoms/onboarding";
-import { calculateFromProfile, type CalculationResult } from "@/utils/ree";
+import { createSettings } from "@/services/storage/targets";
+import { calculateFromProfile, recalculateTargets, type CalculationResult } from "@/utils/ree";
 
 /**
  * Flame icon for calorie goal
@@ -54,7 +55,8 @@ const MAX_CALORIES = 4000;
 
 export function Goal() {
     const navigate = useNavigate();
-    const [wizardData, setWizardData] = useAtom(wizardDataAtom);
+    const [wizardData] = useAtom(wizardDataAtom);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Calculate recommended calories from profile data
     const calculation: CalculationResult | null = useMemo(() => {
@@ -96,9 +98,45 @@ export function Goal() {
         setCalories(value);
     };
 
-    const handleSave = () => {
-        setWizardData((prev) => ({ ...prev, dailyCalories: calories }));
-        navigate("/setup/country");
+    const handleSave = async () => {
+        if (isSubmitting) return;
+
+        setIsSubmitting(true);
+
+        try {
+            // Calculate final targets
+            const targets = recalculateTargets(
+                calories,
+                wizardData.weight!,
+                wizardData.weightUnit
+            );
+
+            // Save to storage
+            await createSettings({
+                setupMode: "guided",
+                profile: {
+                    age: wizardData.age!,
+                    height: wizardData.height!,
+                    heightUnit: wizardData.heightUnit,
+                    weight: wizardData.weight!,
+                    weightUnit: wizardData.weightUnit,
+                    biologicalProfile: wizardData.biologicalProfile!,
+                },
+                activity: {
+                    averageDailySteps: wizardData.averageDailySteps!,
+                    strengthSessionsPerWeek: wizardData.strengthSessionsPerWeek,
+                },
+                countryCode: wizardData.countryCode!,
+                calorieStrategy: "same",
+                targets,
+            });
+
+            // Navigate to main app
+            navigate("/food", { replace: true });
+        } catch (error) {
+            console.error("Failed to save settings:", error);
+            setIsSubmitting(false);
+        }
     };
 
     // Calculate slider position for thumb styling
@@ -180,8 +218,9 @@ export function Goal() {
                     className="w-full"
                     size="xl"
                     onPress={handleSave}
+                    isDisabled={isSubmitting}
                 >
-                    Save Goal
+                    {isSubmitting ? "Saving..." : "Save Goal"}
                 </Button>
             </div>
         </WizardLayout>

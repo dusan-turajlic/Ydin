@@ -1,97 +1,51 @@
-import { Button } from "@ydin/design-system";
-
-/**
- * Flask/beaker icon
- */
-function BeakerIcon() {
-    return (
-        <svg
-            width="32"
-            height="32"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-gold"
-        >
-            <path d="M4.5 3h15" />
-            <path d="M6 3v16a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V3" />
-            <path d="M6 14h12" />
-        </svg>
-    );
-}
+import { Button, FixedModalSheet, FixedModalSheetContent } from "@ydin/design-system";
+import { Beaker } from "@ydin/design-system/icons";
 
 interface ProfileInfoModalProps {
-    isOpen: boolean;
-    onClose: () => void;
+    readonly isOpen: boolean;
+    readonly onClose: () => void;
 }
 
 export function ProfileInfoModal({ isOpen, onClose }: ProfileInfoModalProps) {
-    if (!isOpen) return null;
-
     return (
-        <div
-            className="fixed inset-0 z-50 flex items-end justify-center"
-            onClick={onClose}
+        <FixedModalSheet
+            open={isOpen}
+            onOpenChange={(open) => !open && onClose()}
+            snapPoints={[0.85]}
+            dismissible
         >
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/60" />
-
-            {/* Modal */}
-            <div
-                className="relative w-full max-w-lg bg-surface rounded-t-3xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-300"
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* Close button */}
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-foreground-secondary hover:text-foreground"
-                    aria-label="Close"
-                >
-                    <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    >
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                </button>
-
+            <FixedModalSheetContent className="text-center">
                 {/* Icon */}
-                <div className="flex justify-center mb-4">
+                <div className="flex justify-center">
                     <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-                        <BeakerIcon />
+                        <Beaker className="text-accent size-8" />
                     </div>
                 </div>
 
                 {/* Title */}
-                <h2 className="text-2xl font-bold text-foreground text-center mb-2">
+                <h2 className="text-2xl font-bold text-foreground">
                     Calculation Profiles
                 </h2>
 
                 {/* Subtitle */}
-                <p className="text-foreground-secondary text-center mb-6">
-                    Understanding how we estimate your basal metabolic rate (BMR).
+                <p className="text-foreground-secondary text-left">
+                    These profiles help us choose the correct calculation method for your metabolism.
+                    The formulas are based on biological differences that affect how bodies use energy at rest.
+                    <br />
+                    They don’t define identity they simply help us run the math correctly.
+                    <br />
+                    Choose the profile that best matches your biological starting point.
                 </p>
 
                 {/* Section title */}
-                <p className="text-xs text-foreground-secondary uppercase tracking-wider mb-3">
+                <p className="text-xs text-foreground-secondary uppercase tracking-wider text-left">
                     Selectable Profiles
                 </p>
 
                 {/* Profile cards */}
-                <div className="space-y-4 mb-6">
+                <div className="space-y-4">
                     {/* XY Profile */}
-                    <div className="p-4 rounded-xl bg-muted">
+                    <div className="p-4 rounded-xl bg-muted text-left">
                         <div className="flex items-start gap-3">
                             <span className="text-2xl font-bold text-foreground-secondary">
                                 XY
@@ -108,7 +62,7 @@ export function ProfileInfoModal({ isOpen, onClose }: ProfileInfoModalProps) {
                     </div>
 
                     {/* XX Profile */}
-                    <div className="p-4 rounded-xl bg-muted">
+                    <div className="p-4 rounded-xl bg-muted text-left">
                         <div className="flex items-start gap-3">
                             <span className="text-2xl font-bold text-foreground-secondary">
                                 XX
@@ -126,7 +80,7 @@ export function ProfileInfoModal({ isOpen, onClose }: ProfileInfoModalProps) {
                 </div>
 
                 {/* Info note */}
-                <p className="text-xs text-foreground-secondary text-center mb-6">
+                <p className="text-xs text-foreground-secondary">
                     These profiles are starting points. You can always adjust your targets manually.
                 </p>
 
@@ -138,10 +92,9 @@ export function ProfileInfoModal({ isOpen, onClose }: ProfileInfoModalProps) {
                 >
                     Got It
                 </Button>
-            </div>
-        </div>
+            </FixedModalSheetContent>
+        </FixedModalSheet>
     );
 }
 
 export default ProfileInfoModal;
-

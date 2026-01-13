@@ -1,10 +1,9 @@
 // src/worker.ts
-import createProvider from "@ydin/storage-provider";
 import type { IOpenFoodDexArray, IOpenFoodDexObject } from "@/modals";
-import { DB_NAME, DB_VERSION } from ".";
 
-
+/** Message types from the main thread */
 type Msg =
+    | { type: "init" }  // Port is passed via transferable
     | { type: "start"; url: string }
     | { type: "stop" };
 
@@ -15,16 +14,66 @@ interface IOpenFoodDexObjectWithPath {
     data: IOpenFoodDexObject;
 }
 
-const provider = createProvider("sqlite", DB_NAME, DB_VERSION); // create once
+/** MessagePort to communicate with Database Worker */
+let dbPort: MessagePort | null = null;
+
+/** Request ID counter for matching responses */
+let requestId = 0;
+
+/** Pending request promises */
+const pending = new Map<number, { resolve: () => void; reject: (err: Error) => void }>();
 
 self.addEventListener("message", (e: MessageEvent<Msg>) => {
     console.debug("worker onmessage", e.data);
+
+    // Initialize with the database worker port
+    if (e.data?.type === "init" && e.ports[0]) {
+        dbPort = e.ports[0];
+        dbPort.onmessage = handleDBResponse;
+        dbPort.start();
+    }
+
     if (e.data?.type === "start") {
+        if (!dbPort) {
+            postMessage({ type: "error", data: { message: "Database port not initialized" } });
+            return;
+        }
         run(e.data.url).catch((err) => {
             postMessage({ type: "error", data: { message: String(err?.message ?? err) } });
         });
     }
 });
+
+/**
+ * Handle responses from the Database Worker
+ */
+function handleDBResponse(msg: MessageEvent<{ id: number; success: boolean; error?: string }>) {
+    const { id, success, error } = msg.data;
+    const p = pending.get(id);
+    if (p) {
+        pending.delete(id);
+        if (success) {
+            p.resolve();
+        } else {
+            p.reject(new Error(error ?? 'Unknown database error'));
+        }
+    }
+}
+
+/**
+ * Write a batch of records to the database via the Database Worker
+ */
+function writeBatch(dataArray: IOpenFoodDexObjectWithPath[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+        if (!dbPort) {
+            reject(new Error("Database port not initialized"));
+            return;
+        }
+        const id = ++requestId;
+        pending.set(id, { resolve, reject });
+        dbPort.postMessage({ id, op: 'createMany', dataArray, generateId: false });
+    });
+}
 
 async function run(url: string) {
     const res = await fetch(url, {
@@ -51,7 +100,7 @@ async function run(url: string) {
         async write(obj) {
             batch.push(obj);
             if (batch.length >= BATCH_SIZE) {
-                await provider.createMany(batch, false);
+                await writeBatch(batch);
                 count += batch.length;
                 batch.length = 0;
                 postMessage({ type: "progress", data: { count } });
@@ -59,7 +108,7 @@ async function run(url: string) {
         },
         async close() {
             if (batch.length) {
-                await provider.createMany(batch, false);
+                await writeBatch(batch);
                 count += batch.length;
                 batch.length = 0;
                 postMessage({ type: "progress", data: { count } });

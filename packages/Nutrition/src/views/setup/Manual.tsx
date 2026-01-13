@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAtom } from "jotai";
 import { Button } from "@ydin/design-system";
-import { WizardLayout, ArrowRightIcon } from "./WizardLayout";
+import { WizardLayout } from "./WizardLayout";
 import { wizardDataAtom } from "@/atoms/onboarding";
-import type { DailyTargets } from "@/services/storage/targets";
+import { createSettings, type DailyTargets } from "@/services/storage/targets";
 
 /**
  * Macro input field
@@ -67,7 +67,7 @@ function MacroInput({
 
 export function Manual() {
     const navigate = useNavigate();
-    const [wizardData, setWizardData] = useAtom(wizardDataAtom);
+    const [wizardData] = useAtom(wizardDataAtom);
 
     const [targets, setTargets] = useState<Partial<DailyTargets>>({
         calories: wizardData.manualTargets?.calories,
@@ -81,28 +81,52 @@ export function Manual() {
         setTargets((prev) => ({ ...prev, [key]: value }));
     };
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     const isComplete =
         targets.calories !== undefined &&
         targets.protein !== undefined &&
         targets.fat !== undefined &&
         targets.carbs !== undefined;
 
-    const handleNext = () => {
-        if (!isComplete) return;
+    const handleNext = async () => {
+        if (!isComplete || isSubmitting) return;
 
-        setWizardData((prev) => ({
-            ...prev,
-            manualTargets: {
-                calories: targets.calories!,
-                protein: targets.protein!,
-                fat: targets.fat!,
-                carbs: targets.carbs!,
-                fiber: targets.fiber ?? 30,
-            },
-            dailyCalories: targets.calories!,
-        }));
+        setIsSubmitting(true);
 
-        navigate("/setup/country");
+        try {
+            // Save to storage with manual targets
+            await createSettings({
+                setupMode: "manual",
+                profile: {
+                    age: wizardData.age!,
+                    height: wizardData.height!,
+                    heightUnit: wizardData.heightUnit,
+                    weight: wizardData.weight!,
+                    weightUnit: wizardData.weightUnit,
+                    biologicalProfile: wizardData.biologicalProfile!,
+                },
+                activity: {
+                    averageDailySteps: wizardData.averageDailySteps!,
+                    strengthSessionsPerWeek: wizardData.strengthSessionsPerWeek,
+                },
+                countryCode: wizardData.countryCode!,
+                calorieStrategy: "same",
+                targets: {
+                    calories: targets.calories!,
+                    protein: targets.protein!,
+                    fat: targets.fat!,
+                    carbs: targets.carbs!,
+                    fiber: targets.fiber ?? 30,
+                },
+            });
+
+            // Navigate to main app
+            navigate("/food", { replace: true });
+        } catch (error) {
+            console.error("Failed to save settings:", error);
+            setIsSubmitting(false);
+        }
     };
 
     // Calculate macro calories
@@ -231,10 +255,9 @@ export function Manual() {
                     className="w-full"
                     size="xl"
                     onPress={handleNext}
-                    isDisabled={!isComplete}
+                    isDisabled={!isComplete || isSubmitting}
                 >
-                    Continue
-                    <ArrowRightIcon />
+                    {isSubmitting ? "Saving..." : "Save Targets"}
                 </Button>
             </div>
         </WizardLayout>

@@ -1,4 +1,5 @@
 // Components
+export { Card } from './components/card';
 export { DayButton } from './components/dayButton';
 export { FoodCard } from './components/foodCard';
 export { IconButton } from './components/iconButton';
@@ -18,8 +19,10 @@ export { MacroBadge } from './components/macroBadge';
 // UI Components
 export { Button, buttonVariants } from './ui/button';
 export type { ButtonProps } from './ui/button';
-export { Input } from './ui/input';
+export { Input, inputVariants } from './ui/input';
 export type { InputProps } from './ui/input';
+export * from './ui/radioGroup';
+export { SegmentedControl } from './ui/segmentedControl';
 
 // Utilities
 export { cn } from './lib/utils';

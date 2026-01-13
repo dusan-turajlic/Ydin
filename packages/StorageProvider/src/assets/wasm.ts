@@ -1,7 +1,10 @@
-// Default WASM URL - assumes the file is served from the app's public folder
-// Consuming apps should have wa-sqlite-async.wasm in their public directory
-// This can be overridden via ProviderOptions.wasmUrl
-export const wasmUrl = '/wa-sqlite-async.wasm';
+// Import the bundled WASM file - Vite will handle serving it
+// The ?url suffix tells Vite to return the URL to the asset
+import wasmAssetUrl from './wa-sqlite-async.wasm?url';
+
+// Export the bundled WASM URL as the default
+// This ensures the WASM is always available without requiring CDN or manual setup
+export const wasmUrl = wasmAssetUrl;
 
 // Cache for the WASM blob URL - ensures the WASM file is only fetched once per context
 // Map of source URL -> blob URL

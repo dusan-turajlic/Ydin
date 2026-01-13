@@ -1,29 +1,79 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import createProvider, { type ProviderType, BaseProvider } from "../index";
+import { WorkerProvider } from "../workers";
 
 /**
- * SQLite provider tests are skipped in unit tests because:
- * - jsdom doesn't fully support WebAssembly
- * - SQLite WASM requires a real browser environment
- * - SQLite provider should be tested in e2e tests instead
+ * Provider Test Configuration
  * 
- * The dependency injection pattern is properly implemented and can be used
- * in e2e tests where a real browser environment is available.
+ * This is the SINGLE PLACE to configure how each provider type is created and cleaned up.
+ * When adding a new provider, just add an entry here.
+ * 
+ * Each provider config specifies:
+ * - create: how to create the provider instance (must return BaseProvider)
+ * - cleanup: optional cleanup function (e.g., terminate workers)
  */
-const testableProviders: ProviderType[] = [
-  // 'local',
-  'indexDB',
-  'sqlite'
+interface ProviderTestConfig {
+  type: ProviderType;
+  /** Factory function to create the provider. Receives a unique suffix for db names. */
+  create: (dbSuffix: string) => BaseProvider;
+  /** Optional cleanup function called after each test */
+  cleanup?: (provider: BaseProvider) => void;
+}
+
+/**
+ * ============================================
+ * PROVIDER REGISTRY - UPDATE THIS TO ADD NEW PROVIDERS
+ * ============================================
+ * 
+ * To add a new provider:
+ * 1. Add its type to the ProviderType union in src/index.ts
+ * 2. Add a config entry here
+ */
+const providerConfigs: ProviderTestConfig[] = [
+  // IndexDB - runs directly in main thread
+  {
+    type: 'indexDB',
+    create: () => createProvider('indexDB'),
+  },
+  
+  // SQLite - runs in a Worker (OPFS requires Worker context)
+  {
+    type: 'sqlite',
+    create: (dbSuffix) => new WorkerProvider('sqlite', `test_${dbSuffix}`),
+    cleanup: (provider) => {
+      if (provider instanceof WorkerProvider) {
+        provider.terminate();
+      }
+    },
+  },
+  
+  // LocalStorage - uncomment to enable
+  // {
+  //   type: 'local',
+  //   create: () => createProvider('local'),
+  // },
 ];
+
+// Extract provider types for test.each
+const testableProviders = providerConfigs.map(c => c.type);
+
+// Helper to get config for a provider type
+function getConfig(type: ProviderType): ProviderTestConfig {
+  const config = providerConfigs.find(c => c.type === type);
+  if (!config) throw new Error(`No config found for provider: ${type}`);
+  return config;
+}
 
 // Track created items for cleanup
 const createdPaths: string[] = [];
 
-describe.each(testableProviders)('createProvider($0)', (providerType) => {
+describe.each(testableProviders)('createProvider(%s)', (providerType) => {
   let provider: BaseProvider;
+  let currentConfig: ProviderTestConfig;
 
   beforeEach(() => {
-    provider = createProvider(providerType);
+    currentConfig = getConfig(providerType);
+    provider = currentConfig.create(Date.now().toString());
     createdPaths.length = 0;
   });
 
@@ -36,17 +86,17 @@ describe.each(testableProviders)('createProvider($0)', (providerType) => {
         // Ignore errors during cleanup
       }
     }
+    
+    // Run provider-specific cleanup
+    currentConfig.cleanup?.(provider);
   });
 
   describe(`(${providerType}) initialization`, () => {
     it(`(${providerType}) should successfully initialize the database with correct structure`, async () => {
-      // Act: Initialize the provider (happens in beforeEach)
-
       // Assert: Database should be created and accessible
       expect(provider).toBeDefined();
 
       // Verify database structure by attempting a simple operation
-      // This will trigger the database initialization if not already done
       const testData = { name: 'test', value: 123 };
       const created = await provider.create('/test', testData);
 
@@ -61,18 +111,27 @@ describe.each(testableProviders)('createProvider($0)', (providerType) => {
     });
 
     it(`(${providerType}) should handle concurrent initialization requests`, async () => {
-      // Act: Create multiple provider instances simultaneously
-      const provider1 = createProvider(providerType);
-      const provider2 = createProvider(providerType);
+      const config = getConfig(providerType);
+      const suffix = Date.now().toString();
+      
+      // Create multiple provider instances simultaneously
+      const provider1 = config.create(`concurrent1_${suffix}`);
+      const provider2 = config.create(`concurrent2_${suffix}`);
 
-      // Assert: Both should initialize successfully
-      const data1 = await provider1.create('/concurrent1', { test: 'data1' });
-      const data2 = await provider2.create('/concurrent2', { test: 'data2' });
+      try {
+        // Assert: Both should initialize successfully
+        const data1 = await provider1.create('/concurrent1', { test: 'data1' });
+        const data2 = await provider2.create('/concurrent2', { test: 'data2' });
 
-      expect(data1).toBeDefined();
-      expect(data2).toBeDefined();
-      expect(data1.test).toBe('data1');
-      expect(data2.test).toBe('data2');
+        expect(data1).toBeDefined();
+        expect(data2).toBeDefined();
+        expect(data1.test).toBe('data1');
+        expect(data2.test).toBe('data2');
+      } finally {
+        // Clean up
+        config.cleanup?.(provider1);
+        config.cleanup?.(provider2);
+      }
     });
   });
 
@@ -146,7 +205,6 @@ describe.each(testableProviders)('createProvider($0)', (providerType) => {
         const item1 = await provider.create('/collection', { name: 'Item 1', order: 1 });
         const item2 = await provider.create('/collection', { name: 'Item 2', order: 2 });
         const item3 = await provider.create('/collection', { name: 'Item 3', order: 3 });
-
 
         const retrieved = await provider.getAll<{ name: string; order: number; id: string }>('/collection');
 
@@ -252,4 +310,3 @@ describe.each(testableProviders)('createProvider($0)', (providerType) => {
     });
   });
 });
-

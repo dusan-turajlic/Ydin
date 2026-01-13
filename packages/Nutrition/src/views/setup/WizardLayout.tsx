@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@ydin/design-system";
+import { ChevronLeftIcon } from "@ydin/design-system/icons";
 
 interface WizardLayoutProps {
     children: ReactNode;
@@ -42,11 +43,10 @@ export function WizardLayout({
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
-            {/* Safe area padding for notch */}
-            <div className="pt-[env(safe-area-inset-top)]" />
-
             {/* Header */}
-            <header className="flex items-center justify-between px-4 py-3">
+            <header className="flex items-center justify-between px-4 py-3 sticky top-0 z-20 bg-background border-b border-border">
+                {/* Safe area padding for notch */}
+                <div className="pt-[env(safe-area-inset-top)]" />
                 {/* Back button */}
                 <div className="w-10">
                     {showBack && (
@@ -110,26 +110,6 @@ function ProgressBar({
                 );
             })}
         </div>
-    );
-}
-
-/**
- * Chevron left icon for back button
- */
-function ChevronLeftIcon() {
-    return (
-        <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M15 18l-6-6 6-6" />
-        </svg>
     );
 }
 

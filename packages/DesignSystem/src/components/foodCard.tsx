@@ -1,5 +1,5 @@
+import { Card } from "@/components/card"
 import { IconButton } from "@/components/iconButton"
-import { cn } from "@/lib/utils"
 
 interface FoodCardProps {
   title: string
@@ -27,30 +27,22 @@ export function FoodCard({
   className,
 }: Readonly<FoodCardProps>) {
   return (
-    <div
-      className={cn(
-        "flex items-start justify-between p-4 rounded-xl bg-surface border border-border transition-all",
-        "hover:bg-muted",
-        selected && "ring-2 ring-gold",
-        className,
-      )}
+    <Card
+      icon={<span className="text-xl">{emoji}</span>}
+      title={title}
+      selected={selected}
+      className={className}
+      action={
+        <IconButton
+          icon={selected ? "check" : "plus"}
+          label={selected ? "Remove from meal" : "Add to meal"}
+          onClick={onToggle}
+        />
+      }
     >
-      <div className="flex gap-4">
-        <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center text-xl shrink-0">
-          {emoji}
-        </div>
-        <div className="space-y-1">
-          <h3 className="font-semibold text-foreground leading-tight">{title}</h3>
-          <p className="text-sm text-foreground-secondary">
-            {calories} 🔥 {protein}P {fat}F {carbs}C • {serving}
-          </p>
-        </div>
-      </div>
-      <IconButton
-        icon={selected ? "check" : "plus"}
-        label={selected ? "Remove from meal" : "Add to meal"}
-        onClick={onToggle}
-      />
-    </div>
+      <p className="text-sm text-foreground-secondary mt-1">
+        {calories} 🔥 {protein}P {fat}F {carbs}C • {serving}
+      </p>
+    </Card>
   )
 }
