@@ -7,3 +7,6 @@
 
 export { spawnDatabaseWorker } from './spawnDatabaseWorker';
 export type { SpawnDatabaseWorkerOptions, DatabaseWorkerHandle } from './spawnDatabaseWorker';
+
+export { WorkerProvider } from './WorkerProvider';
+export type { WorkerProviderOptions } from './WorkerProvider';

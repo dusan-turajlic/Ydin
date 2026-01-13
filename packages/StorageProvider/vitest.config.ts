@@ -1,28 +1,27 @@
 import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
-import { resolve } from 'path';
 
 export default defineConfig({
-  publicDir: 'public',
   server: {
-    fs: {
-      // Allow serving WASM files from sqlite-wasm for browser tests
-      allow: [
-        resolve(__dirname, 'src'),
-        resolve(__dirname, 'node_modules/@subframe7536/sqlite-wasm/dist'),
-      ],
+    headers: {
+      // Required headers for SharedArrayBuffer (needed for OPFS SQLite storage)
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
     },
   },
+  optimizeDeps: {
+    exclude: ['@subframe7536/sqlite-wasm'],
+  },
+  // Treat WASM files as assets
+  assetsInclude: ['**/*.wasm'],
   test: {
     globals: true,
     projects: [
-      // E2E tests - run in browser with Playwright
       {
         extends: true,
         test: {
           name: 'e2e',
           include: ['src/**/*.e2e.{ts,tsx}'],
-          setupFiles: ['src/__test__/setup.ts'],
           browser: {
             enabled: true,
             provider: playwright(),
@@ -34,4 +33,3 @@ export default defineConfig({
     ],
   },
 });
-

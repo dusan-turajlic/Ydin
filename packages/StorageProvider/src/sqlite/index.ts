@@ -61,6 +61,7 @@ export default class SQLiteProvider extends BaseProvider {
                 // Get cached WASM blob URL - ensures WASM is only fetched once per context
                 // even if multiple SQLiteProvider instances are created
                 const wasmBlobUrl = await getCachedWasmUrl(this.options?.wasmUrl ?? defaultWasmUrl);
+
                 // OPFS storage - faster and more reliable than IndexedDB
                 // Note: OPFS requires the app to run in a Web Worker context
                 const db = await initSQLite(
