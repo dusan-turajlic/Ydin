@@ -8,15 +8,18 @@
 import BaseProvider, { type IBaseSearchQuary, type ProviderOptions } from '../base';
 import type { ProviderType } from '../index';
 
-/** Database operation request types */
-type DBRequest =
-    | { id: number; op: 'get'; path: string }
-    | { id: number; op: 'getAll'; path: string }
-    | { id: number; op: 'create'; path: string; data: unknown; generateId?: boolean }
-    | { id: number; op: 'createMany'; dataArray: { path: string; data: unknown }[]; generateId?: boolean }
-    | { id: number; op: 'search'; path: string; query: IBaseSearchQuary }
-    | { id: number; op: 'update'; path: string; data: unknown }
-    | { id: number; op: 'delete'; path: string };
+/** Database operation request types (without id - used for building requests) */
+type DBRequestPayload =
+    | { op: 'get'; path: string }
+    | { op: 'getAll'; path: string }
+    | { op: 'create'; path: string; data: unknown; generateId?: boolean }
+    | { op: 'createMany'; dataArray: { path: string; data: unknown }[]; generateId?: boolean }
+    | { op: 'search'; path: string; query: IBaseSearchQuary }
+    | { op: 'update'; path: string; data: unknown }
+    | { op: 'delete'; path: string };
+
+/** Database operation request types (with id - used for sending) */
+type DBRequest = DBRequestPayload & { id: number };
 
 /** Database operation response types */
 type DBResponse =
@@ -109,11 +112,11 @@ export class WorkerProvider extends BaseProvider {
         return this.initPromise;
     }
 
-    private async send<T>(request: Omit<DBRequest, 'id'>): Promise<T> {
+    private async send<T>(request: DBRequestPayload): Promise<T> {
         await this.init();
 
         const id = ++this.requestId;
-        const fullRequest = { ...request, id } as DBRequest;
+        const fullRequest: DBRequest = { ...request, id };
 
         return new Promise<T>((resolve, reject) => {
             this.pendingRequests.set(id, {
