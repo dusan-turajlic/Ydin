@@ -1,12 +1,12 @@
-import createProvider from "@ydin/storage-provider";
+import { WorkerProvider } from "@ydin/storage-provider/workers";
 import { Day, CoreDate } from "@/domain";
 import type { DiaryItem, AddDiaryItemInput, DayEntries, WeekEntries } from "./types";
 
 export const DB_NAME = "NUTRITION_DIARY_DB";
 export const DB_VERSION = 1;
 
-// Use IndexedDB for diary - simpler and avoids WASM conflicts with OpenFoodDex SQLite
-const provider = createProvider("sqlite", DB_NAME, DB_VERSION);
+// Use WorkerProvider with SQLite - OPFS requires Worker context
+const provider = new WorkerProvider("sqlite", DB_NAME, DB_VERSION);
 
 // Base path for all diary entries
 const BASE_PATH = "/nutrition/log";

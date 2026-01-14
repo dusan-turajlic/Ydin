@@ -1,4 +1,4 @@
-import createProvider from "@ydin/storage-provider";
+import { WorkerProvider } from "@ydin/storage-provider/workers";
 import type {
     UserSettings,
     CreateUserSettingsInput,
@@ -9,8 +9,8 @@ import type {
 export const DB_NAME = "NUTRITION_TARGETS_DB";
 export const DB_VERSION = 1;
 
-// Use SQLite provider for targets (same as diary)
-const provider = createProvider("sqlite", DB_NAME, DB_VERSION);
+// Use WorkerProvider with SQLite - OPFS requires Worker context
+const provider = new WorkerProvider("sqlite", DB_NAME, DB_VERSION);
 
 // Base path for user settings/targets
 const BASE_PATH = "/nutrition/targets";

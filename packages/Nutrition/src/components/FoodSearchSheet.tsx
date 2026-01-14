@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense, useMemo } from "react";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useNavigate } from "react-router-dom";
 import { FixedModalSheet, FixedModalSheetPeek, FixedModalSheetBottomPeek, FixedModalSheetContent, SearchInput, TabGroup, TabButton, Button } from "@ydin/design-system";
@@ -56,7 +56,7 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
     // Display time from atom (selected or current hour)
     const displayTime = `${logHour}:00`;
 
-    const tabs = [
+    const tabs = useMemo(() => [
         {
             id: SCAN_TAB_ID,
             tab: <TabButton icon={<Scan className="h-4 w-4" />}>Scan</TabButton>,
@@ -67,7 +67,7 @@ export default function FoodSearchSheet({ code }: Readonly<FoodSearchSheetProps>
             tab: <TabButton icon={<Search className="h-4 w-4" />}>Search</TabButton>,
             content: <SearchResults query={searchQuery} />,
         },
-    ];
+    ], [searchQuery]);
 
     // Viewing product details
     const isViewingProduct = !!code;
